@@ -2,10 +2,11 @@ const app = require("express")();
 const http = require("http").Server(app);
 const io = require("socket.io")(http);
 const getId = require("./majiang_main/src/utilities/userId");
+const {getTiles, randomTiles, tilesMade} = require("./majiang_main/src/utilities/tileMaker")
 let users = [];
+let tiles = [];
+let dupCounter = 0;
 
-//users = [{room:{roomName, roomId}, user:[{userId,
-//userName, socketId, logInOrder, seatDir}]}]
 let seat = 0; //counter for seat selected
 let memberCounter = 0; //members counter for loggedIn in one game room
 let group = 4; //totlal persons for one room
@@ -14,28 +15,29 @@ let roomNumb = 0;
 let seatselected = ["", "", "", ""];
 let socketMemo = [];
 let dataCollect = [];
+let temp = new Array(4);
 
-http.listen(process.env.PORT || 3000, () => {
-  console.log("port at 3000 is ready");
-});
+   http.listen(process.env.PORT || 3000, () => {
+   console.log("port at 3000 is ready");
+   });
 
-io.on("connection", (socket) => {
-  console.log(`Socket ${socket.id} connected.`);
+   io.on("connection", (socket) => {
+   console.log(`Socket ${socket.id} connected.`);
 
-  //clients[socket.id]=socket
-  socketMemo.push(socket.id);
-  console.log(socketMemo);
+   //clients[socket.id]=socket
+   socketMemo.push(socket.id);
 
-  if (socketMemo.length === 3) {
-    //3 sockets (app, center, store) for every connection
+   //if (socketMemo.length === 1) {
+    //3 sockets (app, store) for every connection
     if (memberCounter === 0) {
       roomNumb = getId.getId(5);
     }
     users.push({
-      counter: memberCounter,
       roomId: roomNumb,
-      id: socketMemo,
+      id: socket.id,
       userId: getId.getId(8),
+      dealer: false,
+      seat:'',
     });
     if (users.length === 5) {
       users.pop();
@@ -43,10 +45,11 @@ io.on("connection", (socket) => {
     let i = users.length - 1;
     users[i].index = i;
     socketMemo = [];
+    console.log(users[i].roomId)
     io.emit("loggedIn", users);
-  }
+   //}
 
-  socket.on(
+   socket.on(
     "newuser",
     (
       data //user object from login component
@@ -61,9 +64,9 @@ io.on("connection", (socket) => {
       io.emit("userOnline", users[data.index]);
       checkRoom();
     }
-  );
-
-  socket.on("reconnect", (data) => {
+   );
+   ///need modify here!!!
+   socket.on("reconnect", (data) => {
     console.log("reconnect", data);
     users.map((user) => {
       user.roomId === data.roomId
@@ -72,24 +75,22 @@ io.on("connection", (socket) => {
           : console.log("do Nothing1")
         : console.log("do Nothing2");
     });
-  });
+   });
 
-  //from center doDicing() shoiul from app  11111
-  socket.on("diceChange", (data) => {
-    //emit to app ///!!should directly from enter $emit
+   //from app after dicing doDicing() 
+   socket.on("diceChange", (data) => {
+    //emit to other 3 apps
     io.emit("luckyNumber", data);
-  });
-  //form vuex
-  socket.on("diceNumber", (data) => {
-    //emit to app and mutate the data ///22222 should from app to store and app to all other apps
-    io.emit("luckyNumber2", data);
-  });
-
-  socket.on("diced", (data) => {
+   });
+ 
+   //diceTotal of one with its self index
+   socket.on("diced", (data) => {
     if (dataCollect.length === 4) {
+      console.log(dupCounter,'dupCounter');//after dup treated
+      dupCounter--;
       dataCollect.splice(data.a, 1, data);
     } else {
-      dataCollect.push(data);
+      dataCollect.push(data);//first run
     }
     dataCollect.sort((a, b) => a.a - b.a);
     if (dataCollect.length > 3) {
@@ -102,78 +103,89 @@ io.on("connection", (socket) => {
                 index: e.a,
                 elememt: e.t,
               });
+              dupCounter = dup.length
             }
           }
         });
       }
-      dup.length === 0
-        ? io.emit("allDiced", dataCollect) //dicing finished!!!
+      dupCounter===0
+        ? (io.emit("allDiced", (dataCollect.sort((a, b) => a.t-b.t))))//dicing finished!!!
         : io.emit("dup", dup);
     }
-  });
-  // four done msg from each players when dicing
-  // let collect = []
-  // socket.on('finished', data =>{
-  //   collect.push(collect.forEach(e=>e!==data))
-  //   if (collect.lengh ===4){
-  //     io.emit('allDiced')
-  //   }
-  // })
+   });
 
-  //seat selected and self# changed
-  socket.on("changed", (data) => {
+   //seat selected and self# changed
+   socket.on("seatSelected", (data) => {
     seat++;
-    seatselected[data.data1] = data.data;
-    socket.broadcast.emit("selected", data.data1);
+    let payload = [data, seat]
+    io.emit("selected", payload);//io.emit vs broadcast!
     if (seat === 4) {
-      io.emit("ready");
-    }
-  }),
-    socket.on("disconnect", (data) => {
-      console.log(`Socket ${socket.id} disconnected.`);
+      tiles = getTiles();
+      let shuffled = [];
+      while(tiles.length>0){
+          let k = getRandomizer(0, tiles.length-1);
+          shuffled.push(tiles[k])
+          tiles.splice(k, 1)
+      }
+      tiles = randomTiles(shuffled);
+      io.emit("sitDown");
+    };
+    
+    socket.on('ready', data => {
+     temp[data[1]]=data[0];//rearange the users array
+     if (temp.length === 4){
+       io.emit('userSet', temp)
+     }
+    });
+    socket.on('makeWalls', players=>{
+      dupCounter++
+      if(dupCounter===4){
+        let tileWalls = tilesMade(players, tiles);
+        io.emit('setTiles', {onHands: tileWalls[0], onTable: tileWalls[1], allTiles:tiles});
+        console.log(tileWalls[0].length, 'server')
+      }
+      })
+   }),
+                                                 
+       //io.on deffer from socket.on!!!!
+       socket.on("disconnect", (data) => {
+       console.log(`Socket ${socket.id} disconnected.`);
 
-      idArray.push(socket.id);
-      if (idArray.length === 3) {
-        console.log(users, "users2");
+       idArray.push(socket.id);
 
         let itemIdx, nameLeft;
 
         users.map((user, idx) => {
-          idArray.forEach((e) =>
-            e === user.id
-              ? ((itemIdx = idx), (nameLeft = user.name), console.log(idx))
-              : console.log(user.id, "/", idx, "/", user.name)
-          );
-          console.log(idArray);
+          //idArray.forEach((e) =>
+          idArray[0] === user.id
+              ? ((itemIdx = idx), (nameLeft = user.name))
+              : nameLeft = "nobody"
         });
-        idArray = [];
+
         let roomLeft = users[itemIdx].roomId;
         console.log(nameLeft + "left from room" + roomLeft);
         io.emit("loggedOut", nameLeft);
         users.splice(itemIdx, 1);
         memberCounter--;
-
-        if (memberCounter === 0 && !users) {
-          refreshServer();
-        } else {
-          let onesInRoom = users.map((user) => user.name);
-
-          users.length < 1 || users == undefined || null
-            ? ((onesInRoom = "Nobody"), refreshServer())
-            : console.log(onesInRoom);
-          console.log(`${onesInRoom}`, "still in the room");
-        }
-      }
-    });
+        idArray = []
+      });
 });
+
+function getRandomizer(bottom, top) {
+  return Math.floor(Math.random() 
+  * (1 + top - bottom)) + bottom;
+};
+
 function checkRoom() {
   if (users.length === group) {
     //4 people in one game room
     console.log("full");
     io.emit("Full", users); //to app
     memberCounter = 0;
+    socketMemo = [];
   }
 }
+
 function refreshServer() {
   memberCounter = 0;
   console.log("refresh server");

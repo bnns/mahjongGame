@@ -15,14 +15,11 @@
   "author": "Jim",
   "license": "ISC",
   "dependencies": {
-    "@atom-vue/vue": "^3.0.0-alpha.1",
     "express": "^4.17.1",
     "mongoose": "^5.10.4",
-    "socket.io": "^2.3.0",
-    "vuetify": "^2.3.17"
+    "socket.io": "^2.3.0"
   },
   "devDependencies": {
-    "nodemon": "^2.0.4",
-    "webpack": "^4.44.2"
+    "nodemon": "^2.0.4"
   }
 }
