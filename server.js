@@ -65,52 +65,53 @@ let temp = new Array(4);
       checkRoom();
     }
    );
-   ///need modify here!!!
-   socket.on("reconnect", (data) => {
-    console.log("reconnect", data);
-    users.map((user) => {
-      user.roomId === data.roomId
-        ? user.id === data.lastId
-          ? (user.id = data.id)
-          : console.log("do Nothing1")
-        : console.log("do Nothing2");
-    });
+    
+   socket.on('pong', function(data){
+     console.log(data.id, 'pong', data.userId, '//', data.roomId)
+       users.map((user) => {
+         user.roomId === data.roomId
+           ? user.userId === data.userId
+             ? (user.id = data.id, console.log(data.id, 'pong'))
+             : console.log("do Nothing1")
+           : console.log("do Nothing2");
+       });
    });
 
-   //from app after dicing doDicing() 
-   socket.on("diceChange", (data) => {
-    //emit to other 3 apps
+   //from after doDicing() 
+   socket.on("diceChange", data => {
+    //emit to all 4 players
     io.emit("luckyNumber", data);
    });
  
-   //diceTotal of one with its self index
-   socket.on("diced", (data) => {
+   // data = dicedTotal with its self index
+   socket.on("diced", data => {
     if (dataCollect.length === 4) {
       console.log(dupCounter,'dupCounter');//after dup treated
       dupCounter--;
       dataCollect.splice(data.a, 1, data);
     } else {
-      dataCollect.push(data);//first run
+      dataCollect.push(data);//wait for 4 players
     }
-    dataCollect.sort((a, b) => a.a - b.a);
+    //[{a, t}, {a, t}, {a, t}, {a, t}]
     if (dataCollect.length > 3) {
+      dataCollect.sort((a, b) => a.a - b.a);
       let dup = [];
       for (let k = 0; k < 4; k++) {
-        dataCollect.forEach((e) => {
+        dataCollect.forEach((e) => {//find all dups
           if (e.a !== k) {
             if (e.t === dataCollect[k].t) {
               dup.push({
                 index: e.a,
                 elememt: e.t,
-              });
+              });//dupCounter += dup.length??
               dupCounter = dup.length
             }
           }
         });
       }
       dupCounter===0
-        ? (io.emit("allDiced", (dataCollect.sort((a, b) => a.t-b.t))))//dicing finished!!!
-        : io.emit("dup", dup);
+        ? (io.emit("allDiced", (dataCollect)))//dicing finished
+        : io.emit("dup", dup);//dicing continuing
     }
    });
 
@@ -141,8 +142,8 @@ let temp = new Array(4);
       dupCounter++
       if(dupCounter===4){
         let tileWalls = tilesMade(players, tiles);
-        io.emit('setTiles', {onHands: tileWalls[0], onTable: tileWalls[1], allTiles:tiles});
-        console.log(tileWalls[0].length, 'server')
+        io.emit('setTiles', {onHands: tileWalls[0], 
+          onTable: tileWalls[1], allTiles:tiles});
       }
       })
    }),
@@ -150,7 +151,7 @@ let temp = new Array(4);
        //io.on deffer from socket.on!!!!
        socket.on("disconnect", (data) => {
        console.log(`Socket ${socket.id} disconnected.`);
-
+       
        idArray.push(socket.id);
 
         let itemIdx, nameLeft;
@@ -159,7 +160,7 @@ let temp = new Array(4);
           //idArray.forEach((e) =>
           idArray[0] === user.id
               ? ((itemIdx = idx), (nameLeft = user.name))
-              : nameLeft = "nobody"
+              : nameLeft = "somebody"
         });
 
         let roomLeft = users[itemIdx].roomId;
@@ -176,13 +177,18 @@ function getRandomizer(bottom, top) {
   * (1 + top - bottom)) + bottom;
 };
 
+function sendHeartbeat(){
+  setTimeout(sendHeartbeat, 8000);
+  io.sockets.emit('ping', { beat : 1 });
+  }
+
 function checkRoom() {
   if (users.length === group) {
     //4 people in one game room
-    console.log("full");
     io.emit("Full", users); //to app
     memberCounter = 0;
     socketMemo = [];
+    setTimeout(sendHeartbeat, 8000);
   }
 }
 

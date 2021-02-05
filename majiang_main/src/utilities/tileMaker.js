@@ -6,7 +6,6 @@
 // };
 let counter = 0;
 const yourStartTiles = (players, wall) => {
-  console.log(counter, 'vuex')
   if(counter===0){
   let tilesOnHand = new Array(4);
   for (let k = 0; k < 4; k++){
@@ -73,6 +72,7 @@ const tileMaker = () => {
             tileType: "dragon",
             tileSort: "22" + `${i}`,
             chosen: false,
+            chiPenGan: false,
             id: id++,
           });
         }
@@ -82,6 +82,7 @@ const tileMaker = () => {
             tileType: "wind",
             tileSort: "21" + `${i}`,
             chosen: false,
+            chiPenGan: false,
             id: id++,
           });
         }
@@ -92,6 +93,7 @@ const tileMaker = () => {
             tileType: "suite",
             tileSort: "1" + `${k}` + `${i}`,
             chosen: false,
+            chiPenGan: false,
             id: id++,
           });
         }
@@ -101,6 +103,7 @@ const tileMaker = () => {
             tileType: "season",
             tileSort: "33" + `${j}`,
             chosen: false,
+            chiPenGan: false,
             id: id++,
           });
           tiles.push({
@@ -108,6 +111,7 @@ const tileMaker = () => {
             tileType: "flower",
             tileSort: "32" + `${j}`,
             chosen: false,
+            chiPenGan: false,
             id: id++,
           });
         }

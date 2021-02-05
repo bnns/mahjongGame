@@ -1,38 +1,42 @@
 <template>
   <div class="cross">
     <button>
-    <img v-for="tile in crossTiles" :key="tile.index" :src="require(`../assets/${tile.url}.png`)" :alt="`tile.url`"/>
+    <img v-for="tile in crossTiles" 
+    :key="tile.index" 
+    :src="require(`../assets/${tile.url}.png`)" 
+    :alt="`tile.url`"/>
     </button>
   </div>
+
 </template>
 <script type="text/javascript">
-
+import { mapGetters } from 'vuex'
   export default {
     name: 'crossTile',
     components: {},
     props: ['cross'],
     data () {
       return {
-        firstPlayer:false,
-        crossTiles:
-        [
-        {url: "standCross"},
-        {url: "standCross"},
-        {url: "standCross"},
-        {url: "standCross"},
-        {url: "seven_tiao_s"},
-        {url: "standCross"},
-        {url: "standCross"},
-      {url: "standCross"},
-      {url: "standCross"},
-      {url: "standCross"},
-      {url: "standCross"},
-      {url: "standCross"},
-      {url: "standCross"}
-        ],
     }
-  }
-  }
+  },
+
+  computed: {  
+  ...mapGetters ([
+ 'getTiles'
+  ]),
+  
+  crossTiles: {
+    cache: false,
+    get() {
+    let a = this.getTiles(this.cross)
+    a.forEach(e => (e.chiPenGan)
+    ?e.url = `${e.url}_s`
+    :e.url = 'standCross')
+    return a
+    },
+  },
+},
+}
 </script>
 <style scoped>
   img{
@@ -44,9 +48,9 @@
     background-color: blue;
     z-index: 12;
   }
-  @media screen and (max-width: 600px) {
+  @media screen and (max-width: 1200px) {
       img {
-        height: 5vh;
+        height: 4vh;
       }
 }
 </style>

@@ -1,37 +1,42 @@
 <template >
   <div class="right">
     <button>
-    <img v-for="tile in rightTiles" :key="tile.index" :src="require(`../assets/${tile.url}.png`)" :alt="`${tile.url}`"/>
+    <img v-for="tile in rightTiles" 
+    :key="tile.index" 
+    :src="require(`../assets/${tile.url}.png`)" 
+    :alt="`tile.url`"/>
     </button>
   </div>
+
 </template>
 <script type="text/javascript">
+import { mapGetters } from 'vuex'
   export default {
-  name: 'rightTile',
-  components: {},
-  props: ['right'],
-  data () {
+   name: 'rightTile',
+   components: {},
+   props: ['right'],
+   data () {
     return {
-          firstPlayer:false,
-          rightTiles:
-          [
-          {url: "standRight"},
-          {url: "standRight"},
-          {url: "standRight"},
-          {url: "standRight"},
-          {url: "standRight"},
-          {url: "standRight"},
-          {url: "standRight"},
-          {url: "standRight"},
-          {url: "standRight"},
-          {url: "standRight"},
-          {url: "standRight"},
-          {url: "standRight"},
-          {url: "seven_tiao_s"}
-          ],
-      }
     }
-}
+  },
+
+    computed: {  
+    ...mapGetters ([
+   'getTiles'
+    ]),
+
+    rightTiles: {
+      cache: false,
+      get() {
+      let a = this.getTiles(this.right)
+      a.forEach(e => (e.chiPenGan)
+      ?e.url=`${e.url}_s`
+      :e.url = "standRight")
+      return a
+      },
+    },
+  },
+}    
 </script>
 <style scoped>
    button {
@@ -39,8 +44,8 @@
      flex-wrap: nowrap;
      flex-direction: column;
      justify-content: space-evenly;
-
-     align-items: flex-end;
+     padding: 18px;
+     /* align-items: start; */
      background-color: pink;
    }
    img{

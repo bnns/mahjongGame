@@ -1,7 +1,8 @@
 <template class="box">
     <div id="app" class="container">
-        <div class="self" v-show="show"><h3>{{self}}</h3>
-    <selfTile v-bind:self='self'/>
+        <div class="self" v-show="show">
+    <selfTile :self='self'
+              :tilesOnHands='tilesOnHands'/>
         </div>
         <div class="cross" v-show="show">
       <crossTile v-bind:cross="cross" />
@@ -10,7 +11,7 @@
       <leftTile v-bind:left="left" />
         </div>
         <div class="right" v-show="show">
-      <rightTile v-bind:righ="right" />
+      <rightTile v-bind:right="right" />
         </div>
 
         <div class="center" v-show="show">
@@ -129,6 +130,7 @@ export default {
       cross: 2,
       left: 3,
       mySeat:'',
+      myId:'',
       inOrder: ['first', 'second', 'third', 'last'],
       seats: ["seats", "seats", "seats", "seats"],
       seatsObject: ["NORTH", "EAST", "WEST" ,"SOUTH"],
@@ -147,31 +149,38 @@ export default {
 
     //need to use roomId for communication!
     this.socket.on("loggedIn", data => {
-      if(this.wasConnected
-           &&this.socket.id
-           !==this.mySocketId)
-           {
-            let lastId = this.mySocketId
-            this.mySocketId = this.socket.id;
-            let payload;
-            payload.push({
-                  roomId: this.roomNumb,
-                  lastId: lastId,
-                  socketId: this.socket.id,
-                });
-            this.socket.emit("reconnect", payload);
-           }
       if(!this.wasConnected){
         this.wasConnected=true
         this.stages = 'login'}
       (this.users.length===0)
-      ?this.roomNumb = data[data.length-1].roomId
+      ?(this.roomNumb = data[data.length-1].roomId, 
+       this.myId = data[data.length-1].userId)
       :window.console.log(this.roomNumb);
       if(this.counter<5)//reconnect?
       {
         this.mySocketId = this.socket.id;
         this.counter = data.length;
       }
+     });
+
+     this.socket.on('ping', ()=>
+    { 
+      let payload=[];
+      {
+       let lastId = this.mySocketId;
+       this.mySocketId = this.socket.id;
+       
+       payload.push({
+       roomId: this.roomNumb,
+       lastId: lastId,
+       userId: this.myId,
+       id:this.mySocketId,
+       });
+       
+       //this.socket.emit("reconnect", payload);
+      }
+      this.socket.emit('pong', payload);
+      //socket.emit('pong', {beat: 1});
     });
 
     this.socket.on("userOnline", (data) => {
@@ -196,9 +205,11 @@ export default {
 
     //from server//data???data.n
     this.socket.on("allDiced", data => {
-      this.rank = this.award(data.sort((a, b)=>b.t-a.t));
-      window.console.log(this.rank, 'rank on t')
+      let byTotal = data.sort((a, b)=>b.t-a.t);
+  
+      this.rank = this.award(byTotal);
       this.rank = this.rank.sort((a, b)=>a.a-b.a)
+      //window.console.log(data.map(d => d.t).sort((a, b)=>b-a))
       this.rank.forEach((e, idx) => {
         e.a === this.self
           ? this.findMyRank(idx)
@@ -220,6 +231,7 @@ export default {
     this.seats = data[0][0];
     this.seatsObject = data[0][1];
     this.seatObj = data[0][2];
+    window.console.log(data, 'seatSelect')
     this.myTurn = this.inOrder[data[1]];
     });
 
@@ -246,11 +258,9 @@ export default {
       }
     });
 
-    this.socket.on('setTiles', data =>{
+    //ready to play...
+    this.socket.on('setTiles', data => {
       this.startTiles(data)
-      //this.allTiles(data.allTiles);
-      //this.setTiles(data.onHands);
-      //this.setPublicTiles(data.onTable)
     });
 
     this.socket.on("loggedOut", (data) => {
@@ -259,7 +269,6 @@ export default {
     
     //all four players logged-in
     this.socket.on("Full", users => {
-      //game room full
       this.counter = 0;
       this.users = users;
       this.stages = 'dicing';
@@ -275,9 +284,6 @@ export default {
 
   methods: {
     ...mapActions(["setluckyNumber",
-                   "allTiles",
-                   "setTiles",
-                   "setPublickTiles",
                    "startTiles",
                    "setPlayers"]),
 
@@ -286,7 +292,7 @@ export default {
      if(this.myTurn!=='last'){
      this.inOrder.forEach((e, i)=>{
          (e===this.myTurn)
-         ?(this.myTurn=e[i+1])//next turn
+         ?(this.myTurn = e[i+1], window.console.log(e[i+1],'myTurn'))//next turn
          :window.console.log('')
      });
      }
@@ -408,7 +414,7 @@ export default {
   font-size: max(2vw, 20px);
   grid-area: center;
   justify-self: center;
-  align-self: end;
+  align-self: start;
   /* align-items: stretch; */
 }
 .self {

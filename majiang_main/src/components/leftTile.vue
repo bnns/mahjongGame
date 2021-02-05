@@ -1,47 +1,48 @@
 <template>
   <div class="left">
     <button>
-      <img v-for="tile in leftTiles" :key="tile.index" :src="require(`../assets/${tile.url}.png`)" :alt="tile.url"/>
+      <img v-for="tile in leftTiles" 
+      :key="tile.index" 
+      :src="require(`../assets/${tile.url}.png`)" 
+      :alt="`tile.url`"/>
     </button>
   </div>
 
 </template>
 <script type="text/javascript">
+import { mapGetters } from 'vuex';
   export default {
     name: 'leftTile',
     components: {},
     props: ['left'],
     data () {
       return {
-        firstPlayer:false,
-        leftTiles:[
-        {url: "standLeft"},
-        {url: "standLeft"},
-        {url: "standLeft"},
-        {url: "four_wan_s"},
-        {url: "standLeft"},
-        {url: "standLeft"},
-        {url: "standLeft"},
-        {url: "standLeft"},
-        {url: "standLeft"},
-        {url: "standLeft"},
-        {url: "standLeft"},
-        {url: "standLeft"},
-        {url: "standLeft"}
-        ],
     }
   },
-  // methods: {
-  //   begin(){
-  //   if(!this.leftTiles){
-  //     for(let i = 0; i<13; i++){
-  //   this.leftTiles.push({url:'standLeft'})
-  // }}}
-  }
+
+  computed: {
+     ...mapGetters ([
+    'getTiles'
+    ]),
+
+    leftTiles: {
+      cache: false,
+      get() {
+      let a = this.getTiles(this.left)
+      a.forEach((e) => (e.chiPenGan)
+      ?e.url = `${e.url}_s`
+      :e.url = 'standLeft')
+      return a
+      },
+    },
+  },
+}
 </script>
 <style scoped>
    button {
-     display: grid;
+     display: flex;
+     flex-direction: column;
+     padding: 18px;
      justify-self: center;
      align-self: start;
      background-color: yellow;

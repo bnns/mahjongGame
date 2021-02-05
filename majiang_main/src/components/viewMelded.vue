@@ -2,8 +2,8 @@
 <template >
   <div id="viewMelded" class='container'>
   <div class='_self'>
-    <a>
-    <img src="../assets/back_m.png" alt="Image lost..." v-on:click="action(`${self}`)"/>
+    <a
+    v-on:click="action(`${self}`)">
     </a>
     <img v-for = '(tile, index) in getMeldedTiles(`${self}`)'
          :key ='index'
@@ -14,8 +14,8 @@
          />
   </div>
   <div class='_right'>
-    <a class='right-b'>
-    <img src="../assets/back_m.png" alt="Image lost..." v-on:click="action(`${right}`)"/>
+    <a class='right-b'
+    v-on:click="action(`${right}`)">
     </a>
     <img class='right-b' v-for = '(tile, index) in getMeldedTiles(`${right}`)'
          :key = 'index'
@@ -25,8 +25,8 @@
          />
   </div>
   <div class='_cross'>
-    <a class='cross-b'>
-    <img src="../assets/back_m.png" alt="Image lost..." v-on:click="action(`${cross}`)"/>
+    <a class='cross-b'
+      v-on:click="action(`${cross}`)">
     </a>
     <img class='cross-b' v-for = '(tile, index) in getMeldedTiles(`${cross}`)'
          :key = 'index'
@@ -36,8 +36,8 @@
          />
   </div>
   <div class='_left'>
-    <a class='left-b'>
-    <img src="../assets/back_m.png" alt="Image lost..." v-on:click="action(`${left}`)"/>
+    <a class='left-b'
+     v-on:click="action(`${left}`)">
     </a>
     <img class='left-b' v-for = '(tile, index) in getMeldedTiles(`${left}`)'
          :key = 'index'
@@ -59,15 +59,15 @@
 
   export default {
   name: 'viewMelded',
-  // props: ['yourTiles', 'leftTiles', 'rightTiles', 'crossTiles'],
-  data () {
-    return {
-      self: 0,
-      right: 1,
-      cross: 2,
-      left: 3
-  }
-},
+  props: ['self', 'right', 'cross', 'left', 'name'],
+  // data () {
+  //  return {
+    //  self: 0,
+    //  right: 1,
+    //  cross: 2,
+    //  left: 3
+  // }
+// },
 computed: {
   ...mapGetters ([
  'getPublicTiles',
@@ -97,9 +97,10 @@ methods: {
   display: grid;
   grid-template-columns: repeat(16, 1fr);
   grid-template-rows: repeat(16, 1fr);
-   height: 60vh;
+   height: 70vh;
    width: 80vw;
-   /* align-self: center; */
+   align-self: center;
+   justify-self: center; 
  }
  ._self {
    display: flex;
@@ -156,15 +157,40 @@ methods: {
   justify-self: center;
   z-index: 10;
  } */
- @media screen and (max-width: 600px) {
+ @media screen and (max-width: 1200px) {
      .container{
-      displag: grid;
-       height: 35vh;
-       width: 60vw;
+      display: grid;
+       height: 80vh;
+       width: 75vw;
        align-self: center;
+       justify-self: center;
      }
      img {
        height: 6vh;
      }
  }
+ @media screen and (min-width: 550px) {
+    .container{
+     display: grid;
+      height: 83vh;
+      width: 65vw;
+      align-self: center;
+      justify-self: center;
+    }
+    img {
+      height: 6vh;
+    }
+  }
+  @media screen and (min-width: 300px) {
+   .container{
+    display: grid;
+     height: 65vh;
+     width: 70vw;
+     align-self: center;
+     justify-self: center;
+   }
+   img {
+     height: 6vh;
+   }
+  }
 </style>

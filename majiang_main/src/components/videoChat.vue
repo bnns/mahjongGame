@@ -60,12 +60,13 @@
      max-height: 58px;
    }
    .container{
-    displag: grid;
+     position: absolute;
+    display: inline-flexbox;
     grid-template-columns: repeat(16, 1fr);
     grid-template-rows: repeat(16, 1fr);
      height: 85vh;
      width: 90vw;
-     align-self: center;
+     align-self: left;
    }
    .-self {
      grid-column: 9/-1;
