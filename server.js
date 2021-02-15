@@ -12,6 +12,7 @@ let memberCounter = 0; //members counter for loggedIn in one game room
 let group = 4; //totlal persons for one room
 let idArray = [];
 let roomNumb = 0;
+let room = [];
 let seatselected = ["", "", "", ""];
 let socketMemo = [];
 let dataCollect = [];
@@ -31,6 +32,7 @@ let temp = new Array(4);
     //3 sockets (app, store) for every connection
     if (memberCounter === 0) {
       roomNumb = getId.getId(5);
+      room.push(roomNumb);
     }
     users.push({
       roomId: roomNumb,
@@ -45,9 +47,7 @@ let temp = new Array(4);
     let i = users.length - 1;
     users[i].index = i;
     socketMemo = [];
-    console.log(users[i].roomId)
     io.emit("loggedIn", users);
-   //}
 
    socket.on(
     "newuser",
@@ -115,12 +115,26 @@ let temp = new Array(4);
     }
    });
 
+   //[0]=user, [1]=indx
+   socket.on('ranked', data=>{
+          temp[data[1]]=data[0]
+          seat++
+          if(seat===4)
+          {
+            let payload = temp;
+            temp = new Array(4);
+            seat=0;
+          io.emit('rankedUsers', payload)
+          }
+       });
+
    //seat selected and self# changed
    socket.on("seatSelected", (data) => {
-    seat++;
-    let payload = [data, seat]
+    seat++; 
+    let payload = [data, (seat===4?1:seat)]///////
     io.emit("selected", payload);//io.emit vs broadcast!
     if (seat === 4) {
+      seat = 0
       tiles = getTiles();
       let shuffled = [];
       while(tiles.length>0){
@@ -129,15 +143,20 @@ let temp = new Array(4);
           tiles.splice(k, 1)
       }
       tiles = randomTiles(shuffled);
-      io.emit("sitDown");
+      io.emit("sitDown");//ready for playing
     };
-    
+
     socket.on('ready', data => {
      temp[data[1]]=data[0];//rearange the users array
-     if (temp.length === 4){
-       io.emit('userSet', temp)
+     seat++;
+     if (seat === 4){
+       let payload = temp.slice()
+       seat = 0;
+       temp = new Array(4);
+       io.emit('userSet', payload) 
      }
     });
+    
     socket.on('makeWalls', players=>{
       dupCounter++
       if(dupCounter===4){
@@ -147,7 +166,25 @@ let temp = new Array(4);
       }
       })
    }),
-                                                 
+       socket.on('sort1', a=>{
+        io.emit('sort2', a)
+      }),
+
+       socket.on('disTile', data =>{
+         io.emit('disTile1', data)
+       }), 
+       
+       socket.on('inTurn', data =>{
+         io.emit('inTurn', data)
+       })
+       
+       socket.on('goahead', data=>{
+        io.emit('goahead', data)
+       })
+
+       socket.on('getTile', data =>{
+         socket.broadcast.emit('getTile', data)
+       })
        //io.on deffer from socket.on!!!!
        socket.on("disconnect", (data) => {
        console.log(`Socket ${socket.id} disconnected.`);

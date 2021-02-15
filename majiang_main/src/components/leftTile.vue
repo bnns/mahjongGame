@@ -10,32 +10,34 @@
 
 </template>
 <script type="text/javascript">
-import { mapGetters } from 'vuex';
+//import { mapGetters } from 'vuex';
   export default {
     name: 'leftTile',
     components: {},
-    props: ['left'],
+    props: ['left', 'leftTiles'],
     data () {
       return {
     }
   },
 
-  computed: {
-     ...mapGetters ([
-    'getTiles'
-    ]),
+  // computed: {
+    //  ...mapGetters ([
+    // 'getTiles'
+    // ]),
 
-    leftTiles: {
-      cache: false,
-      get() {
-      let a = this.getTiles(this.left)
-      a.forEach((e) => (e.chiPenGan)
-      ?e.url = `${e.url}_s`
-      :e.url = 'standLeft')
-      return a
-      },
-    },
-  },
+    // leftTiles: {
+     // cache: false,
+      // get() {
+      // let a = this.getTiles(this.left)
+      // if(a){
+      // a.map((e) => (e.chiPenGan)
+      // ?(e.url = `${e.url}`)
+      // :e.url = 'standLeft')
+      // }
+      // return a
+      // },
+    // },
+  //},
 }
 </script>
 <style scoped>

@@ -2,16 +2,24 @@
     <div id="app" class="container">
         <div class="self" v-show="show">
     <selfTile :self='self'
-              :tilesOnHands='tilesOnHands'/>
+              :myTiles='myTiles'
+              :inTurn='inTurn'
+              :mySeat='mySeat'
+              :myRank='myRank'
+              @sortTiles='sortTiles'
+              @casting='casting' />
         </div>
         <div class="cross" v-show="show">
-      <crossTile v-bind:cross="cross" />
+      <crossTile :cross="cross"
+                 :crossTiles="crossTiles"/>
         </div>
         <div class="left" v-show="show">
-      <leftTile v-bind:left="left" />
+      <leftTile :left="left"
+                :leftTiles='leftTiles'/>
         </div>
         <div class="right" v-show="show">
-      <rightTile v-bind:right="right" />
+      <rightTile :right="right"
+                 :rightTiles="rightTiles" />
         </div>
 
         <div class="center" v-show="show">
@@ -20,7 +28,10 @@
         :right="right"
         :left="left"
         :cross="cross"
-        :name="name"
+        :users="users"
+        :goAhead='goAhead'
+        @getTile="getTile"
+        :tilesOnTableLength="tilesOnTableLength"
       />
         </div>
 
@@ -48,19 +59,17 @@
                :left="left"
                :cross="cross"
                :name="name"
+               :users="users"
                :seats="seats"
                :index="index"
                :seatObj="seatObj"
                @input="selected"
-               :myTurn="myTurn"
+               :inTurn="inTurn"
                :rank="rank"
                :myRank="myRank"
              />
         </div>
 
-        <!-- <div class="self" v-if="stages==='mahjiong'"> -->
-      <!-- <selfTile v-bind:self="self" /> -->
-        <!-- </div> -->
         <div class="center" v-if="stages==='login'">
             <login
                @clicked="finishOnLogin"
@@ -118,7 +127,7 @@ export default {
       ],
       options: ["North北", "East. 東", "West 西", "South南"],
       mySocketId: "",
-      myTurn: 'last',
+      inTurn: 'last',
       myRank: '',
       duplicated: false,
       disabled: false,
@@ -138,7 +147,7 @@ export default {
       counter: 0,
       rank:[],
       show: false,
-      flag: false,
+      goAhead: new Array(4),
       temp: [],
     };
   },
@@ -146,7 +155,7 @@ export default {
   created() {
     let a = this.getDicedNumber; // from store
     this.goTotal(a);
-
+    
     //need to use roomId for communication!
     this.socket.on("loggedIn", data => {
       if(!this.wasConnected){
@@ -207,19 +216,23 @@ export default {
     this.socket.on("allDiced", data => {
       let byTotal = data.sort((a, b)=>b.t-a.t);
   
-      this.rank = this.award(byTotal);
-      this.rank = this.rank.sort((a, b)=>a.a-b.a)
+      this.rank = this.award(byTotal);//good here
+      
       //window.console.log(data.map(d => d.t).sort((a, b)=>b-a))
       this.rank.forEach((e, idx) => {
         e.a === this.self
-          ? this.findMyRank(idx)
+          ? (this.findMyRank(idx), this.users[this.self].myRank = this.myRank)
           : window.console.log("no rank?");
-          this.myTurn="first";
+          this.inTurn="first";
          if(this.myRank==="first"){
             this.users[this.self].dealer=true;
          }
          this.seatObj = this.options;//set for seating
       });
+      this.rank = this.rank.sort((a, b)=>a.a-b.a);
+      this.socket.emit('ranked', 
+      [this.users[this.self], this.self])
+
       setTimeout( 
         ((this.index = 0), //instru guide
         (this.stages = 'seating')),
@@ -227,35 +240,41 @@ export default {
       );
     });
 
+    this.socket.on('rankedUsers', data=>{
+      this.users = data
+    })
+
     this.socket.on('selected', data => {
     this.seats = data[0][0];
     this.seatsObject = data[0][1];
     this.seatObj = data[0][2];
-    window.console.log(data, 'seatSelect')
-    this.myTurn = this.inOrder[data[1]];
+    this.inTurn = this.inOrder[data[1]];
     });
 
     //all seats selected
-    this.socket.on("sitDown", () => {
-       let payload = this.users[this.self];
+    this.socket.on("sitDown", () => 
+      {
        ['SOUTH', 'EAST', 'NORTH', 'WEST']
-       .filter((e, i)=>{if(e===this.mySeat) 
-            {
-         this.users[this.self].seat = this.mySeat, 
-         this.pagePosition(i)}
-        
-            })
-        this.socket.emit('ready', [payload, this.self])
+       .filter((e, i)=>
+        {
+         if(e===this.mySeat) {
+         this.users[this.self].seat = this.mySeat;
+         this.pagePosition(i)
+         this.users[this.self].index = this.self;
+         this.socket.emit('ready', [this.users[this.self], this.self])
+            }
+        })
+        this.inTurn = 'first';
         this.show = true;
-        this.stages = 'mahjiong'
-    });
-    
-    this.socket.on('userSet', data => {
-      this.temp.push(data)
-      if(this.temp.length === 4){
-      this.setPlayers(this.temp[3])
-      this.socket.emit('makeWalls', data)
-      }
+        this.disabled = true;//later use
+        this.stages = 'mahjiong';
+      });
+
+    this.socket.on('userSet', data =>
+    { 
+      this.users = data;
+      this.setPlayers(data);
+      this.socket.emit('makeWalls', data);
     });
 
     //ready to play...
@@ -263,6 +282,22 @@ export default {
       this.startTiles(data)
     });
 
+    //who is in turn...
+    this.socket.on('inTurn', data=>{
+    data==='start'&&
+      this.myRank==='first'
+      ?(data = this.mySeat, this.socket.emit('inTurn', data))
+      :this.inTurn=data
+            if(this.inTurn===this.mySeat){
+              if(this.getTiles(this.self!==13)){return}
+              this.goAhead.fill(false)
+              this.goAhead[this.self] = true;
+              this.socket.emit('goahead', this.goAhead)
+            }
+            
+    })
+    this.socket.on('goahead', data=>this.goAhead=data )
+    
     this.socket.on("loggedOut", (data) => {
       window.console.log(`${data} left! `); //when somebody logged out
     });
@@ -273,38 +308,156 @@ export default {
       this.users = users;
       this.stages = 'dicing';
     });
-  },
+  
+    this.socket.on('sort2', a=>{
+    this.updTiles(a)
+    })
+    
+    this.socket.on('getTile', data=>{
+      this.updPublicTiles1(data)
+    })
 
+    //[this.self, payload[2], tileClicked]=data
+    this.socket.on('disTile1', data => {
+     let a = ['SOUTH', 'WEST', 'NORTH', 'EAST', 'SOUTH'];
+      let i = a.findIndex(e=>e===this.inTurn);
+      this.disabled = true;
+      this.inTurn=a[i+1], this.socket.emit('inTurn', this.inTurn);
+     
+      this.updMyTiles(data);
+      window.console.log(tileScaner(this.getTiles(this.self)))
+      this.updPublicTiles1(data);
+       if(this.inTurn===this.mySeat){
+          this.goAhead.fill(false)
+          this.goAhead[this.self] = true;
+          this.socket.emit('goahead', this.goAhead)
+       }
+    })
+  },
+    
+          
   computed: {
     ...mapGetters([
       'getPlayers',
       "getDicedNumber",
+      'getTiles',
+      'getPublicTiles',
+      'getTableTiles',
     ]),
+      tilesOnTableLength: {
+       get(){
+         let a1 = this.getTableTiles;
+         if(!a1){return}
+         return a1.length
+       }
+      },
+
+      myTiles: {
+       a:[],
+       get(a) {
+        let a1 = this.getTiles(this.self);
+        if(!a1){return}
+        a = a1.slice()
+       return a;
+        }
+      },
+     crossTiles: {
+     get() {
+      let a1 = this.getTiles(this.cross)
+      if(!a1){return []}
+      //a = a1.slice()
+     if(a1){
+     return a1.map(e => (e.chiPenGan)
+     ? {...e, url: `${e.url}_s`}
+     : {...e, url: 'standCross'})
+           }
+         return []
+        }
+     },
+     rightTiles: {
+     get() {
+     let a1 = this.getTiles(this.right)
+     if(!a1){return}
+     if(a1){
+     return a1.map(e => (e.chiPenGan)
+     ?{...e, url:`${e.url}_s`}
+     :{...e, url: "standRight"})
+           }
+           return []
+        },
+     },
+     leftTiles: {
+     get() {
+     let a1 = this.getTiles(this.left)
+     if(!a1){return}
+     if(a1){
+     return a1.map((e) => (e.chiPenGan)
+         ?{...e, url: `${e.url}_s`}
+         :{...e, url: 'standLeft'})
+           }
+     return []
+       },
+     },
   },
 
   methods: {
     ...mapActions(["setluckyNumber",
                    "startTiles",
-                   "setPlayers"]),
+                   "setPlayers",
+                   'tileChosen',
+                   'updMeldedTile',
+                   'updPublicTiles1',
+                   'updTiles',
+                   'updMyTiles']),
+     sortTiles: function(a){
+          this.socket.emit('sort1', a)
+          },
+          //payload=[myIndex, tileId, preClickedMyIdx]
+     casting: function(payload) {
+          let arg = [this.self, payload[1]]
+          this.tileChosen(arg)//???not necessary
+          
+          let tileClicked = this.myTiles[payload[2]];
+          
+          if(payload[2]!==payload[0]){
+          this.updMyTiles([this.self, payload[0], payload[2], tileClicked]);
+          return
+          }
+          if(payload[2]=== payload[0]){//already clicked
+          if(this.inTurn!==this.mySeat){alert('not your turn'); return}
+          if(this.myTiles.length===13){this.updPublicTiles1([false, this.self])}
+          this.socket.emit('disTile', [this.self, payload[2], tileClicked])
+          this.goAhead.fill(false)
+          this.memory='';
+          return
+          }
+     },
 
-    //after seat selected from 'seating'
-    selected: function(data){ 
-     if(this.myTurn!=='last'){
-     this.inOrder.forEach((e, i)=>{
-         (e===this.myTurn)
-         ?(this.myTurn = e[i+1], window.console.log(e[i+1],'myTurn'))//next turn
-         :window.console.log('')
-     });
-     }
-      let selectedIndex = data;//index selected in seating.vue
-      let a = this.seatsObject[selectedIndex];//find the tile
-      this.seats.splice(this.self, 1, a);//replace [seats]
-      this.mySeat = a.replace(/B/, '').toUpperCase();
-      this.seatsObject.splice(selectedIndex, 1);//del the tile
-      this.seatObj.splice(selectedIndex, 1);//del the name
-      let payload = [this.seats, this.seatsObject, this.seatObj]
-      this.socket.emit('seatSelected', payload);  
-    },
+     getTile: function(data){
+       if(this.inTurn!==this.mySeat){alert('not your turn'); return}
+       if(!this.goAhead||!this.disabled){return}
+       //let arg = [];
+      //  (this.tilesOnTableLength===91&&this.myRank==='first')
+      //  ?arg=[true, data]
+      //  :arg=[false, data]
+       this.updPublicTiles1([false, data])
+       this.disabled = true
+       this.socket.emit('getTile', data)
+     },
+
+     //after seat selected from 'seating'
+     selected: function(data){  
+       let selectedIndex = data;//index selected in seating.vue
+       let a = this.seatsObject[selectedIndex];//find the tile
+       this.seats.splice(this.self, 1, a);//replace [seats]
+       this.mySeat = a.replace(/B/, '').toUpperCase();
+       this.seatsObject.splice(selectedIndex, 1);//del the tile
+       this.seatObj.splice(selectedIndex, 1);//del the name
+       let payload = [this.seats, this.seatsObject, this.seatObj];
+       this.socket.emit('seatSelected', payload);
+       if(this.inTurn==='last'){
+         this.socket.emit('inTurn', 'start')}//start game
+     },
 
     //$emit when dicing
     // notify other apps
@@ -312,22 +465,32 @@ export default {
       this.index = 1;
       this.socket.emit("diceChange", data);
     },
-    //this.dices.splice(data[0], 1, this.dice[data[1] - 1]);
 
     pagePosition: function(data) {
+      let temp = this.users[this.self]
       this.self = data;
+      this.users[this.self]=temp//1
+
+      temp = this.users[this.right]
       this.right = this.self + 1;
       if (this.right > 3) {
         this.right = 0;
       }
+      this.users[this.right]=temp//2
+
+      temp = this.users[this.cross]
       this.cross = this.right + 1;
       if (this.cross > 3) {
         this.cross = 0;
       }
+      this.users[this.cross]=temp//3
+
+      temp = this.users[this.left]
       this.left = this.cross + 1;
       if (this.left > 3) {
         this.left = 0;
       }
+      this.users[this.left]=temp//4
     },
 
     finishOnLogin: function(user) {
@@ -386,6 +549,36 @@ export default {
     
   },
 };
+function tileScaner(array){
+  array.sort((a, b) => a.tileSort - b.tileSort);
+  let dup = new Array(4);
+  let arrayPair = [];
+  let x = 13;
+  for (let l = 0; l < 4; l++){
+     for (let k = 0; k < x; k++){
+        array.forEach((e, i) => {
+          if (i !== k){
+            if (e.tileSort === array[k].tileSort){
+              dup[l].push(e);//dupCounter += dup.length??
+              if(dup[l].length===3){
+                let arrayTemp = [];
+                for (let n=0; n<3; n++){
+                     arrayTemp.push(array.slice(dup[l][n], 1))
+                }
+                l+=1, x-=3 
+              }else if (dup[l].length===2){
+                 alert(dup[0])
+                for (let n=0; n<2; n++){
+                     arrayPair.push(array.slice(dup[l][n], 1))
+                }
+                l+=1, x-=2 
+            }
+          }
+        }
+      });
+    }
+  } 
+}
 </script>
 <style>
 .cross {
@@ -441,6 +634,7 @@ export default {
     grid-template-rows: 1fr 1fr 1fr;
     grid-template-areas:
       "cross cross cross"
+      ".center."
       "left center right"
       "self self self";
   }

@@ -1,12 +1,12 @@
 <template>
-<div class="container">{{myTurn}}
+<div class="container">
         <div class="-self" @blur="open = false">
             <div class="selected" :class="{ open: open }" @mousemove="open = !open">
               <img class="image" :src="require(`../assets/${seats[self]}.png`)" />
-              <h3>{{(myTurn===(rank[self].n))?"Pick!":`${seats[self]}`}}</h3>
+              <h3>{{(inTurn===(users[self].myRank))?"Pick!":`${seats[self]}`}}</h3>
             </div>
             <div class="items" :class="{ selectHide: !open }"
-            v-if='myTurn===(rank[self].n)'>
+            v-if='inTurn===(users[self].myRank)'>
                 <div
                   id="option"
                   v-for="(option, i) of seatObj"
@@ -26,21 +26,21 @@
           :src="require(`../assets/${seats[right]}.png`)"
           alt="Direction"
         />
-        <h3>{{(myTurn===(rank[right].n))?"Pick!":`${seats[right]}`}}</h3>
+        <h3>{{(inTurn===(users[right].myRank))?"Pick!":`${seats[right]}`}}</h3>
       </div>
       <div class="-cross">
         <img
           :src="require(`../assets/${seats[cross]}.png`)"
           alt="Direction"
         />
-        <h3>{{(myTurn===(rank[cross].n))?"Pick!":`${seats[cross]}`}}</h3>
+        <h3>{{(inTurn===(users[cross].myRank))?"Pick!":`${seats[cross]}`}}</h3>
       </div>
       <div class="-left">
         <img
           :src="require(`../assets/${seats[left]}.png`)"
           alt="Direction"
         />
-        <h3>{{(myTurn===(rank[left].n))?"Pick!":`${seats[left]}`}}</h3>
+        <h3>{{(inTurn===(users[left].myRank))?"Pick!":`${seats[left]}`}}</h3>
       </div>
       <div class="-center">
         {{ guide[index] }}
@@ -84,13 +84,17 @@ export default {
       type: Number,
       required: true,
     },
-    myTurn: {
+    inTurn: {
       type: String,
       required: false,
     },
     myRank: {
       type: String,
       required: true,
+    },
+    users: {
+      type: Array,
+      require: true,
     },
     rank: {
       type: Array,
