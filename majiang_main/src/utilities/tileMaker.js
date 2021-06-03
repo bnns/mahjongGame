@@ -4,17 +4,20 @@
   // }
   // return yourTiles;
 // };
+
+
 let counter = 0;
+//making tile walls when starting the game
 const yourStartTiles = (players, wall) => {
-  if(counter===0){
+  if(counter===0){//???
   let tilesOnHand = new Array(4);
   for (let k = 0; k < 4; k++){
     (players[k].dealer)?x=14:x=13;
        tilesOnHand[k] = (wall.slice(0, x),
        wall.splice(0, x));
     }
-    counter++
-    return [tilesOnHand, wall]
+    counter++//???
+    return [tilesOnHand, wall]//four hands made and a wall for dealing
   }
 }
 

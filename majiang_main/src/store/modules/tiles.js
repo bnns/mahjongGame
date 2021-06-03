@@ -9,7 +9,7 @@ const state = {
   ],
   tilesAll: [], //full set of mahjiang tiles
   tilesOnHands: [], //four private of tiles randomly made of full set
-  meldedTiles: [[], [], [], []], //discarded from each players
+  discardedTiles: [[], [], [], []], //distiled from each players
 
   publicTiles: [], //tiles yet to deal
 };
@@ -26,20 +26,20 @@ const actions = {
   setPlayers({commit}, arg) {
     commit('players', arg);
   },
-  updMeldedTile({ commit }, arg) {
-    commit("tileMelded", arg);
+  updDiscardedTile({ commit }, arg) {
+    commit("tileDiscarded", arg);
   },
   updPublicTiles1({ commit }, arg) {
-    commit("outGivingPubTile1", arg);
+    commit("outGivingPubTile1", arg);//arg[0]-false or true, arg[1]=[this.self]
   },
   setluckyNumber({ commit }, arg) {
     commit("myNumber", arg);
   },
   updMyTiles({commit}, arg){
     commit('tilesUpdt', arg);
-    // commit('outGivingPubTile', arg[0]);//???
+    commit('outGivingPubTile', arg[0]);//???? 
   },
-  updTiles({ commit }, arg) {
+  updTiles({ commit }, arg) {//sort only
     commit("sortGrouping", arg)
   },
   // updPublicTiles2({commit}, arg){
@@ -55,26 +55,29 @@ const mutations = {
   tileChosen: (state, arg) =>
     state.tilesOnHands[arg[0]].filter(function(e) {
       if (e.id === arg[1]) {
-        e.chosen = !e.chosen;
+        e.chosen = !e.chosen;//true or false?
       }
     }), //chosen to do something
-  tileMelded: (state, arg) => state.meldedTiles[arg[1]].push(arg[0]), //used
-  outGivingPubTile1: (state, arg) => {alert(arg[1])
-    if (arg[0]&&state.tilesOnHands[arg[1]].length < 14) {
-      let a = state.publicTiles.shift();
-      state.tilesOnHands[arg[1]].push(a)
-    } else if(!arg[0]){
+  tileDiscarded: (state, arg) => state.discardedTiles[arg[1]].push(arg[0]), //used
+
+  outGivingPubTile1: (state, arg) => {
+    // if (arg[0]&&state.tilesOnHands[arg[1]].length < 14) {//arg[0]=boolean
+    //   let a = state.publicTiles.shift();//????
+    //   state.tilesOnHands[arg[1]].push(a)
+    // } else 
+    if(!arg[0]){
       let a = state.publicTiles.shift();
       state.tilesOnHands[arg[1]].push(a)
     }
   }, //tiles for each player
+
   tilesUpdt: (state, arg) => {
     if(arg.length===4){//tile from [2] to [1]
     state.tilesOnHands[arg[0]].splice(arg[2],1)
     state.tilesOnHands[arg[0]].splice(arg[1],0,arg[3])
     } else if (arg.length===3){//distile [1]
       state.tilesOnHands[arg[0]].splice(arg[1], 1)
-      state.meldedTiles[arg[0]].push(arg[2])//add it to melded
+      state.discardedTiles[arg[0]].push(arg[2])//add it to discarded
     }
     else if (arg.length===1){
       if (state.tilesOnHands[arg].length < 13)
@@ -82,6 +85,7 @@ const mutations = {
           state.tilesOnHands[arg].push(a)}
     }
   },
+
   myNumber: (state, arg) => {
     state.dicedNumber.splice(arg[0], 1, arg[1]); //have error here?
     //emit to server
@@ -97,14 +101,14 @@ const mutations = {
   // outGivingPubTile2: (state, arg)=>state.tiles[arg].push(state.publicTiles.pop()),
 };
 
-// meldedTiles: state=>state.meldedTiles=tileMaker(),
+// discardedTiles: state=>state.discardedTiles=tileMaker(),
 const getters = {
   getTiles: (state) => (index) => {
     state.tilesOnHands[index];
     return state.tilesOnHands[index];
   },
   // getAllTiles: state => state.tilesAll,
-  getMeldedTiles: (state) => (index) => state.meldedTiles[index],
+  getdiscardedTiles: (state) => (index) => state.discardedTiles[index],
   getDicedNumber: (state) => state.dicedNumber,
   getPublicTiles: (state) => (index) => {//????
     if (state.tilesOnHands[index].length < 14) {

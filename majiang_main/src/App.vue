@@ -23,7 +23,7 @@
         </div>
 
         <div class="center" v-show="show">
-      <viewMelded
+      <viewDiscarded
         :self="self"
         :right="right"
         :left="left"
@@ -85,12 +85,13 @@
 <script>
 import io from "socket.io-client";
 import { mapGetters, mapActions } from "vuex";
+//import * as tileScaner from "./utilities/tileScanner.js";
 import selfTile from "./components/selfTile.vue";
 import crossTile from "./components/crossTile.vue";
 import leftTile from "./components/leftTile.vue";
 import rightTile from "./components/rightTile.vue";
 // import center from "./components/center.vue";
-import viewMelded from "./components/viewMelded.vue";
+import viewDiscarded from "./components/viewDiscarded.vue";
 import login from "./components/login.vue";
 import dicing from "./components/dicing.vue";
 import seating from "./components/seating.vue";
@@ -104,14 +105,14 @@ export default {
     crossTile,
     leftTile,
     rightTile,
-    viewMelded,
+    viewDiscarded,
     dicing,
     seating,
     // videoChat
   },
   data() {
     return {
-      socket: io("http://192.168.1.76:3000"),
+      socket: io("http://192.168.1.64:3000"),
       name: "John",
       dices: [],
       stages: '',
@@ -151,8 +152,13 @@ export default {
       temp: [],
     };
   },
-
+  watch: {
+    myTiles: function(){
+      window.console.log(this.tileScaner(this.myTiles), this.self);
+    }
+  },
   created() {
+   // window.console.log(this.tileScaner(a))
     let a = this.getDicedNumber; // from store
     this.goTotal(a);
     
@@ -289,7 +295,7 @@ export default {
       ?(data = this.mySeat, this.socket.emit('inTurn', data))
       :this.inTurn=data
             if(this.inTurn===this.mySeat){
-              if(this.getTiles(this.self!==13)){return}
+              if(this.getTiles(this.self!==13)){return}//???
               this.goAhead.fill(false)
               this.goAhead[this.self] = true;
               this.socket.emit('goahead', this.goAhead)
@@ -318,15 +324,15 @@ export default {
     })
 
     //[this.self, payload[2], tileClicked]=data
-    this.socket.on('disTile1', data => {
+    this.socket.on('disTile1', data => {//from 438
      let a = ['SOUTH', 'WEST', 'NORTH', 'EAST', 'SOUTH'];
-      let i = a.findIndex(e=>e===this.inTurn);
+      let i = a.findIndex(e=>e===this.inTurn);//pointer at index of a-array
       this.disabled = true;
-      this.inTurn=a[i+1], this.socket.emit('inTurn', this.inTurn);
+      this.inTurn=a[i+1], this.socket.emit('inTurn', this.inTurn);//inTurn moves to next
      
-      this.updMyTiles(data);
-      window.console.log(tileScaner(this.getTiles(this.self)))
-      this.updPublicTiles1(data);
+      this.updMyTiles(data);//???
+      this.updDiscardedTile(data);//???
+      this.updPublicTiles1(data);///???
        if(this.inTurn===this.mySeat){
           this.goAhead.fill(false)
           this.goAhead[this.self] = true;
@@ -398,35 +404,37 @@ export default {
      return []
        },
      },
-  },
+   },
 
-  methods: {
+   methods: {
     ...mapActions(["setluckyNumber",
                    "startTiles",
                    "setPlayers",
                    'tileChosen',
-                   'updMeldedTile',
+                   'updDiscardedTile',
                    'updPublicTiles1',
                    'updTiles',
                    'updMyTiles']),
      sortTiles: function(a){
           this.socket.emit('sort1', a)
           },
-          //payload=[myIndex, tileId, preClickedMyIdx]
+     
+     //payload=[myIndex, tileId, preClickedMyIdx]
      casting: function(payload) {
-          let arg = [this.self, payload[1]]
-          this.tileChosen(arg)//???not necessary
+         // let arg = [this.self, payload[1]]
+          //this.tileChosen(arg)//flag for the clicked tile /not needed??
           
           let tileClicked = this.myTiles[payload[2]];
           
-          if(payload[2]!==payload[0]){
+          if(payload[2] !== payload[0]){//second click differs first --relocate
           this.updMyTiles([this.self, payload[0], payload[2], tileClicked]);
           return
           }
-          if(payload[2]=== payload[0]){//already clicked
+
+          if(payload[2]===payload[0]){//second click same as first  --discard
           if(this.inTurn!==this.mySeat){alert('not your turn'); return}
-          if(this.myTiles.length===13){this.updPublicTiles1([false, this.self])}
-          this.socket.emit('disTile', [this.self, payload[2], tileClicked])
+          if(this.myTiles.length===13){this.updPublicTiles1([false, this.self])}//13 when false
+          this.socket.emit('disTile', [this.self, payload[2], tileClicked])//act at line 327????
           this.goAhead.fill(false)
           this.memory='';
           return
@@ -434,6 +442,7 @@ export default {
      },
 
      getTile: function(data){
+       if(this.getTiles(this.self).length===14){alert('too many'); return}
        if(this.inTurn!==this.mySeat){alert('not your turn'); return}
        if(!this.goAhead||!this.disabled){return}
        //let arg = [];
@@ -446,7 +455,7 @@ export default {
      },
 
      //after seat selected from 'seating'
-     selected: function(data){  
+     selected: function(data){ 
        let selectedIndex = data;//index selected in seating.vue
        let a = this.seatsObject[selectedIndex];//find the tile
        this.seats.splice(this.self, 1, a);//replace [seats]
@@ -547,38 +556,75 @@ export default {
       return rank
     },
     
-  },
-};
-function tileScaner(array){
-  array.sort((a, b) => a.tileSort - b.tileSort);
-  let dup = new Array(4);
-  let arrayPair = [];
-  let x = 13;
-  for (let l = 0; l < 4; l++){
-     for (let k = 0; k < x; k++){
-        array.forEach((e, i) => {
-          if (i !== k){
-            if (e.tileSort === array[k].tileSort){
-              dup[l].push(e);//dupCounter += dup.length??
-              if(dup[l].length===3){
-                let arrayTemp = [];
-                for (let n=0; n<3; n++){
-                     arrayTemp.push(array.slice(dup[l][n], 1))
-                }
-                l+=1, x-=3 
-              }else if (dup[l].length===2){
-                 alert(dup[0])
-                for (let n=0; n<2; n++){
-                     arrayPair.push(array.slice(dup[l][n], 1))
-                }
-                l+=1, x-=2 
+    //t: tileSort of discarded
+    tileScaner: function  (tile, t){
+    tile = tile.sort((a, b)=>(a.tileSort - b.tileSort))
+    //let x = tile.length; 
+    let peng = [];
+    let chain = [];// found = false;
+    if(t){
+      peng = this.pengFinder(tile, peng, t)  //1. find  dup tiles making pengs
+
+      for(let k=0; k<4; k++){// four groups of 3 chains and pengs
+        for(let i=1; i<3; i++){ //no more than 3 chains in winning hands
+           if(k==0){ //2. find chain going up (3, 4, 5)
+              let n = Number(t) + i;
+              chain.push(this.chainFinder(tile, n, chain))
+              //if(chain.length===2){k=2}
+              if(chain.length===1&&(Number(chain[0]) !== Number(t)+1))
+                {chain=[]}
             }
-          }
         }
-      });
+        for(let i=1; i<3; i++){
+           if(k==1){ //3. find chain going down (3, 2, 1)
+              let n = Number(t) - i;
+              chain.push(this.chainFinder(tile, n, chain))
+              if(chain[0]===chain[1]){chain.shift()}//if dup delete first one
+              if(i===2&&chain.length===1)[chain=[]]//ignor if length not enough
+        }
+      }
     }
-  } 
-}
+  }
+  return [[peng, 'peng'], [chain, 'chain']]
+},
+     chainFinder: function (tile, n, chain){
+       tile.forEach((e) => {
+         if (e.tileSort == JSON.stringify(n))
+           {if(chain[chain.length-1]!==e.tileSort) chain.push(e.tileSort)}
+       })
+       if(chain.length===2){window.console.log(chain.length)}
+     // return chain
+    },
+
+     pengFinder: function (tile, peng, t){
+      tile.forEach((e, i) => {
+        if(t){ 
+            if(e.tileSort===t){
+              peng.push(e.tileSort)
+              }
+            }
+            else {
+                for (let k = 0; k < 13; k++ ){
+                  if(i!==k){
+                     if(e.tileSort === tile[k]){
+                       peng.push(e.tileSort)
+                     }
+                  }
+                }
+            }  
+       }) 
+    }
+    // function deDup (dup){
+    //   let uniqueEle = [];
+    //   dup.forEach((e)=>{console.log(e, 'deDup')
+    //       if(!uniqueEle.includes(e)){
+    //         uniqueEle.push(e)}
+    //       })
+    //   dup = uniqueEle    
+    // } 
+ },
+};
+
 </script>
 <style>
 .cross {

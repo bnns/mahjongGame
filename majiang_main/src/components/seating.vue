@@ -2,8 +2,8 @@
 <div class="container">
         <div class="-self" @blur="open = false">
             <div class="selected" :class="{ open: open }" @mousemove="open = !open">
-              <img class="image" :src="require(`../assets/${seats[self]}.png`)" />
-              <h3>{{(inTurn===(users[self].myRank))?"Pick!":`${seats[self]}`}}</h3>
+              <img class="image" :src="require(`../assets/${seats[self].toLowerCase()}.png`)" />
+              <h3>{{(inTurn===(users[self].myRank))?"Pick!":`${seats[self].toLowerCase()}`}}</h3>
             </div>
             <div class="items" :class="{ selectHide: !open }"
             v-if='inTurn===(users[self].myRank)'>
@@ -23,24 +23,24 @@
         </div>
       <div class="-right">
         <img
-          :src="require(`../assets/${seats[right]}.png`)"
+          :src="require(`../assets/${seats[right].toLowerCase()}.png`)"
           alt="Direction"
         />
-        <h3>{{(inTurn===(users[right].myRank))?"Pick!":`${seats[right]}`}}</h3>
+        <h3>{{(inTurn===(users[right].myRank))?"Pick!":`${seats[right].toLowerCase()}`}}</h3>
       </div>
       <div class="-cross">
         <img
-          :src="require(`../assets/${seats[cross]}.png`)"
+          :src="require(`../assets/${seats[cross].toLowerCase()}.png`)"
           alt="Direction"
         />
-        <h3>{{(inTurn===(users[cross].myRank))?"Pick!":`${seats[cross]}`}}</h3>
+        <h3>{{(inTurn===(users[cross].myRank))?"Pick!":`${seats[cross].toLowerCase()}`}}</h3>
       </div>
       <div class="-left">
         <img
-          :src="require(`../assets/${seats[left]}.png`)"
+          :src="require(`../assets/${seats[left].toLowerCase()}.png`)"
           alt="Direction"
         />
-        <h3>{{(inTurn===(users[left].myRank))?"Pick!":`${seats[left]}`}}</h3>
+        <h3>{{(inTurn===(users[left].myRank))?"Pick!":`${seats[left].toLowerCase()}`}}</h3>
       </div>
       <div class="-center">
         {{ guide[index] }}

@@ -92,7 +92,7 @@ let temp = new Array(4);
     } else {
       dataCollect.push(data);//wait for 4 players
     }
-    //[{a, t}, {a, t}, {a, t}, {a, t}]
+   
     if (dataCollect.length > 3) {
       dataCollect.sort((a, b) => a.a - b.a);
       let dup = [];
