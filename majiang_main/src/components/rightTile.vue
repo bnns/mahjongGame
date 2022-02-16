@@ -1,53 +1,38 @@
 <template >
   <div class="right">
-    <button>
     <img v-for="tile in rightTiles" 
     :key="tile.index" 
     :src="require(`../assets/${tile.url}.png`)" 
     :alt="`tile.url`"/>
-    </button>
   </div>
-
 </template>
 <script type="text/javascript">
 //import { mapGetters } from 'vuex'
   export default {
-   name: 'rightTile',
+   name: 'RightTile',
    components: {},
    props: ['right', 'rightTiles'],
    data () {
     return {
     }
   },
-
-   // computed: {  
-   // ...mapGetters ([
-   //'getTiles'
-   // ]),
-
-    // rightTiles: {
-      // get() {
-      // let a = this.getTiles(this.right)
-      // if(a){
-      // a.map(e => (e.chiPenGan)
-      // ?(e.url=`${e.url}`)
-      // :e.url = "standRight")
-      // }
-      // return a
-      // },
-    // },
-  //},
+watch:{
+  rightTiles(val, val1){
+    return val1
+  },
+  deep: true
+}
+  
 }    
 </script>
 <style scoped>
-   button {
+   .right {
      display: flex;
+     padding: 0;
      flex-wrap: nowrap;
      flex-direction: column;
      justify-content: space-evenly;
-     padding: 18px;
      /* align-items: start; */
-     background-color: pink;
    }
    img{
       height: 7vh;

@@ -1,18 +1,18 @@
 <template>
   <div class="left">
-    <button>
+   
       <img v-for="tile in leftTiles" 
       :key="tile.index" 
       :src="require(`../assets/${tile.url}.png`)" 
       :alt="`tile.url`"/>
-    </button>
+    
   </div>
 
 </template>
 <script type="text/javascript">
 //import { mapGetters } from 'vuex';
   export default {
-    name: 'leftTile',
+    name: 'LeftTile',
     components: {},
     props: ['left', 'leftTiles'],
     data () {
@@ -41,13 +41,13 @@
 }
 </script>
 <style scoped>
-   button {
+   .left {
      display: flex;
      flex-direction: column;
-     padding: 18px;
+     padding: 0;
      justify-self: center;
      align-self: start;
-     background-color: yellow;
+     margin: auto auto;
    }
    img{
      height: 7vh;

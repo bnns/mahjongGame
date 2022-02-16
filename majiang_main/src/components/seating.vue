@@ -1,46 +1,57 @@
 <template>
-<div class="container">
-        <div class="-self" @blur="open = false">
-            <div class="selected" :class="{ open: open }" @mousemove="open = !open">
+<div class="container">{{inTurn}}
+        <div class="-self" @blur="open=false">
+            <div class="selected" :class="{open:open}" @mousemove="open=!open">
               <img class="image" :src="require(`../assets/${seats[self].toLowerCase()}.png`)" />
-              <h3>{{(inTurn===(users[self].myRank))?"Pick!":`${seats[self].toLowerCase()}`}}</h3>
+              <div>{{(inTurn===(users[self].myRank))
+                ?" Pick!"
+                :`${seats[self].toUpperCase()}`}}</div>
             </div>
-            <div class="items" :class="{ selectHide: !open }"
+            <div class="items" :class="{selectHide:open}"
             v-if='inTurn===(users[self].myRank)'>
                 <div
                   id="option"
-                  v-for="(option, i) of seatObj"
+                  v-for="(option,i) of seatObj"
                   :key="i"
                   @click="
-                    selected = option;
-                    open = false;
+                    selected=option;
+                    open=false;
                     $emit('input', i);
-                  "
-                    >
-                  {{ option }}
+                  ">
+                  {{option}}
                 </div>
             </div> 
+            <div class="name">{{users[self].name}}{{inTurn}}</div>
         </div>
       <div class="-right">
         <img
           :src="require(`../assets/${seats[right].toLowerCase()}.png`)"
           alt="Direction"
         />
-        <h3>{{(inTurn===(users[right].myRank))?"Pick!":`${seats[right].toLowerCase()}`}}</h3>
+        <div>{{(inTurn===(users[right].myRank))
+          ?" Pick!"
+          :`${seats[right].toUpperCase()}`}}</div>
+        <div class="name">{{users[right].name}}</div>
       </div>
       <div class="-cross">
         <img
           :src="require(`../assets/${seats[cross].toLowerCase()}.png`)"
           alt="Direction"
         />
-        <h3>{{(inTurn===(users[cross].myRank))?"Pick!":`${seats[cross].toLowerCase()}`}}</h3>
+        <div>{{(inTurn===(users[cross].myRank))
+          ?" Pick!"
+          :`${seats[cross].toUpperCase()}`}}</div>
+        <div class="name">{{users[cross].name}}</div>
       </div>
       <div class="-left">
         <img
           :src="require(`../assets/${seats[left].toLowerCase()}.png`)"
           alt="Direction"
         />
-        <h3>{{(inTurn===(users[left].myRank))?"Pick!":`${seats[left].toLowerCase()}`}}</h3>
+        <div>{{(inTurn===(users[left].myRank))
+          ?" Pick!"
+          :`${seats[left].toUpperCase()}`}}</div>
+        <div class="name">{{users[left].name}}</div>
       </div>
       <div class="-center">
         {{ guide[index] }}
@@ -50,61 +61,61 @@
 
 <script type="text/javascript">
 export default {
-  name: "seating",
+  name: "Seating",
   props: {
-    seatObj: {
+    seatObj:{
       type: Array,
       required: true,
     },
-    seats: {
+    seats:{
       type: Array,
       required: true,
     },
-    self: {
+    self:{
       type: Number,
       required: true,
     },
-    right: {
+    right:{
       type: Number,
       required: true,
     },
-    cross: {
+    cross:{
       type: Number,
       required: true,
     },
-    left: {
+    left:{
       type: Number,
       required: true,
     },
-    name: {
+    name:{
       type: String,
       required: true,
     },
-    index: {
+    index:{
       type: Number,
       required: true,
     },
-    inTurn: {
+    inTurn:{
       type: String,
       required: false,
     },
-    myRank: {
+    myRank:{
       type: String,
       required: true,
     },
-    users: {
+    users:{
       type: Array,
       require: true,
     },
-    rank: {
+    rank:{
       type: Array,
       required: true,
     }
   },
-  data() {
-    return {
-      selected: null,
-      open: false,
+  data(){
+    return{
+      selected:null,
+      open:false,
       guide: [ "Pick seat..."],
     };
   },
@@ -147,9 +158,21 @@ img {
 .-self {
   grid-column: 9/-1;
   grid-row: 9/-1;
+  display:flex;
+  position:relative;
+  flex-flow: column;
   animation: mymove1 3s infinite;
   background-color: gray;
   align-items: center;
+  justify-items: center;
+}
+.-self .name{
+  /* display: flex; */
+  position: absolute;
+  right:2px;
+  bottom:2px;
+  border-radius: 3px;
+  background-color: rgb(255, 153, 20);
 }
 @keyframes mymove1 {
   from {
@@ -166,23 +189,43 @@ img {
   /* align-items: center; */
 /* } */
 .-right {
+  display:flex;
+  position: relative;
   grid-column: 9/-1;
   grid-row: 1/9;
-  display: inline-block;
+  /* display: inline-block; */
   background-color: pink;
   align-items: center;
-  display:flex;
   flex-flow: column;
 }
+.-right .name{
+  position: absolute;
+  right:2px;
+  top:2px;
+  writing-mode: vertical-rl;
+  text-orientation: sideways;
+  transform: rotate(180deg);
+  border-radius: 3px;
+  background-color: rgb(255, 153, 20);
+}
 .-cross {
+  display:flex;
+  position: relative;
   grid-column: 1/9;
   grid-row: 1/9;
   background-color: rgb(202, 245, 133);
   align-items: center;
-  display:flex;
   flex-flow: column;
 }
+.-cross .name{
+  position: absolute;
+  left:2px;
+  top:2px;
+  border-radius: 3px;
+  background-color: rgb(255, 153, 20);
+}
 .-left {
+  position: relative;
   grid-column: 1/9;
   grid-row: 9/-1;
   background-color: yellow;
@@ -190,7 +233,15 @@ img {
   display:flex;
   flex-flow: column;
 }
-
+.-left .name{
+  position: absolute;
+  left:2px;
+  bottom:2px; 
+  writing-mode: vertical-rl;
+  text-orientation: sideways;
+  border-radius: 3px;
+  background-color: rgb(255, 153, 20);
+}
 .-center {
   grid-column: 7/11;
   grid-row: 7/11;
@@ -199,9 +250,15 @@ img {
   color: white;
   align-items: center;
   justify-content: center;
+  border-radius: 15px;
+  z-index: 9;
+  opacity: 0.8;
 }
 
 .selected {
+  display:grid;
+  justify-items: center;
+  align-content: center;
   width: 46px;
   height: 52px;
   color: rgb(8, 243, 59);
@@ -254,7 +311,7 @@ animation-iteration-count: infinite;
   80% { transform: translate(-1px, -1px) rotate(1deg); }
   90% { transform: translate(1px, 2px) rotate(0deg); }
   100% { transform: translate(1px, -2px) rotate(-1deg); }
-}
+} 
 /* .-centerN { */
   /* grid-column: 7/11; */
   /* grid-row: 7/11; */

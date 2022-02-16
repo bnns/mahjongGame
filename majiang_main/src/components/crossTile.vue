@@ -1,18 +1,15 @@
 <template>
   <div class="cross">
-    <button>
     <img v-for="tile in crossTiles" 
     :key="tile.index" 
     :src="require(`../assets/${tile.url}.png`)" 
     :alt="tile.url"/>
-    </button>
   </div>
-
 </template>
 <script type="text/javascript">
 //import { mapGetters } from 'vuex'
   export default {
-    name: 'crossTile',
+    name: 'CrossTile',
     components: {},
     props: ['cross','crossTiles'],
     data () {
@@ -45,13 +42,18 @@
 }
 </script>
 <style scoped>
+.cross{
+  height: 10vh;
+  display:inline-flex;
+  flex-wrap: wrap;
+  align-content: center;
+}
   img{
     height: 5.5vh;
   }
   button{
     border: 0px;
-    padding: 8px;
-    background-color: blue;
+    padding: 0;
     z-index: 12;
   }
   @media screen and (max-width: 400px) {

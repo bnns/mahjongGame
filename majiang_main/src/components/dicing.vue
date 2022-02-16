@@ -1,32 +1,28 @@
 <template>
   <div class="container">
     <div class="-self" v-on:click="myAction(`${self}`)">
-      <div>
+       <div class="myblock">
         <img
           :src="require(`../assets/${diceNumber[self][0]}.png`)"
           alt="Image lost..."
         />
-      </div>
-      <div>
         <img
           :src="require(`../assets/${diceNumber[self][1]}.png`)"
           alt="Image lost..."
         />
       </div>
-      <div>
+      <div class="myblock">
         <img
           :src="require(`../assets/${diceNumber[self][2]}.png`)"
           alt="Image lost..."
         />
-      </div>
-
-      <div>
         <img
           :src="require(`../assets/${diceNumber[self][3]}.png`)"
           alt="Image lost..."
         />
       </div>
-      <h3>{{ this.diceTotal[self] }}</h3>
+       <h3>{{this.diceTotal[self]}}</h3>
+       <div class="name">{{users[self].name}}</div>
     </div>
     <div class="-right">
       <div>
@@ -34,8 +30,6 @@
           :src="require(`../assets/${diceNumber[right][0]}.png`)"
           alt="Image lost..."
         />
-      </div>
-      <div>
         <img
           :src="require(`../assets/${diceNumber[right][1]}.png`)"
           alt="Image lost..."
@@ -46,14 +40,13 @@
           :src="require(`../assets/${diceNumber[right][2]}.png`)"
           alt="Image lost..."
         />
-      </div>
-      <div>
         <img
           :src="require(`../assets/${diceNumber[right][3]}.png`)"
           alt="Image lost..."
         />
       </div>
       <h3>{{ this.diceTotal[right] }}</h3>
+      <div class="name">{{users[right].name}}</div>
     </div>
     <div class="-cross">
       <div>
@@ -61,8 +54,7 @@
           :src="require(`../assets/${diceNumber[cross][0]}.png`)"
           alt="Image lost..."
         />
-      </div>
-      <div>
+  
         <img
           :src="require(`../assets/${diceNumber[cross][1]}.png`)"
           alt="Image lost..."
@@ -73,14 +65,13 @@
           :src="require(`../assets/${diceNumber[cross][2]}.png`)"
           alt="Image lost..."
         />
-      </div>
-      <div>
         <img
           :src="require(`../assets/${diceNumber[cross][3]}.png`)"
           alt="Image lost..."
         />
       </div>
-      <h3>{{ this.diceTotal[cross] }}</h3>
+      <h3>{{this.diceTotal[cross]}}</h3>
+      <div class="name">{{users[cross].name}}</div>
     </div>
     <div class="-left">
       <div>
@@ -88,8 +79,7 @@
           :src="require(`../assets/${diceNumber[left][0]}.png`)"
           alt="Image lost..."
         />
-      </div>
-      <div>
+     
         <img
           :src="require(`../assets/${diceNumber[left][1]}.png`)"
           alt="Image lost..."
@@ -100,135 +90,118 @@
           :src="require(`../assets/${diceNumber[left][2]}.png`)"
           alt="Image lost..."
         />
-      </div>
-      <div>
+     
         <img
           :src="require(`../assets/${diceNumber[left][3]}.png`)"
           alt="Image lost..."
         />
-      </div>
-      <h3>{{ this.diceTotal[left] }}</h3>
+       </div>
+       <h3>{{this.diceTotal[left]}}</h3>
+       <div class="name">{{users[left].name}}</div>
     </div>
-     <div class="-center">
-   {{guide[index]}}
- </div>
-  </div>
+    <div class="-center">
+         {{guide[index]}}
+    </div>
+</div>
 </template>
 
 <script type="text/javascript">
-//import io from "socket.io-client";
-// import {mapActions} from 'vuex'
 
 export default {
-  name: "dicing",
-  props: {
-    self: {
-      type: Number,
-      required: true,
+  name: "Dicing",
+  props:{
+    self:{
+      type:Number,
+      required:true,
     },
-    right: {
-      type: Number,
-      required: true,
+    right:{
+      type:Number,
+      required:true,
     },
-    cross: {
-      type: Number,
-      required: true,
+    cross:{
+      type:Number,
+      required:true,
     },
-    left: {
-      type: Number,
-      required: true,
+    left:{
+      type:Number,
+      required:true,
     },
-    dices: {
-      type: Array,
-      required: true,
+    dices:{//self created when start??????????
+      type:Array,
+      required:true,
     },
-    name: {
-      type: String,
-      required: true,
+    name:{
+      type:String,
+      required:true,
     },
-    diceTotal: {
-      type: Array,
-      required: true,
+    users:{},
+    diceTotal:{
+      type:Array,
+      required:true,
     },
-    disabled: {
-      type: Boolean,
-      required: true,
+    disabled:{
+      type:Boolean,
+      required:true,
     },
-    stages: {
-      type: String,
-      required: true,
-    },
-    index: {
-      type: Number,
-      required: true,
+    index:{
+      type:Number,
+      required:true,
     },
   },
-  data() {
-    return {
-      // diceNumber:this.dices,
-      guideIndex: this.index,
-      selected: null,
-      open: false,
-      seat: "",
-      seatId: 0,
-      //socket: io("http://192.168.1.76:3000"),
-      guide: ["Dice here...", "Dicing...", "Pick seat..."],
-      //timing:null,
+  data(){
+    return{
+      //diceNumber:this.dices,
+      guideIndex:this.index,
+      selected:null,
+      seatId:0,
+      guide:["Dice here...", "Dicing...", "Pick seat..."],
     };
   },
 
-  computed: {
-    diceNumber: function() {
+  computed:{
+    diceNumber:function(){//?????????????
       return this.dices;
     },
   },
 
-  methods: {
-    myAction: function() {
+  methods:{
+    myAction:function(){
         this.doDicing();
     },
-
-    doDicing: function() {
-      if (this.disabled) {
-        alert("disabled");
+    doDicing:function(){
+      if(this.disabled){
+        alert("disabled");//???????????????
         return;
       }
-      let v = this;
-      let i = 0;
-      let timing = setInterval(() => {
+      let i=0;
+      let timing=setInterval(()=>{
         i++;
-        let arg = [v.self];
-        let aGroup = [];
-        for (let k = 0; k < 4; k++) {
-          let a = v.getRandomizer(1, 6);
+        let arg=[this.self];
+        let aGroup=[];
+        for(let k=0; k<4; k++){
+          let a=this.getRandomizer(1, 6);
           aGroup.push(a);
         }
-        arg.push(aGroup);
+        arg.push(aGroup);//[self, diced numbers]
         //this.diceTotal = aGroup.reduce((accu, el) => accu + el);
         this.$emit("change", arg);
-        // this.socket.emit("diceChange", arg); //emit to Server
-        // v.setluckyNumber(arg)//talk with data store
-        if (i > 20) {
+        if(i>20){
           clearInterval(timing);
           this.$emit("diced", arg);
         }
       }, 700);
-      
     },
 
-    diced() {
-      this.diceNumber = [];
-      this.diceNumber = this.dices;
+    diced(){
+       this.diceNumber=[];
+       this.diceNumber=this.dices;
     },
 
-    getRandomizer: function(bottom, top) {
-      let number = Math.floor(Math.random() * (1 + top - bottom)) + bottom;
+    getRandomizer:function(bottom, top){
+      let number=Math.floor(Math.random()*(1+top-bottom))+bottom;
       return number;
     },
   },
-  // created() {
-  // window.console.log("startTiles"); //this.startTiles();??????????????
-  // },
 };
 </script>
 
@@ -236,9 +209,11 @@ export default {
 * {
   top: 0;
   left: 0;
+  box-sizing: border-box;
 }
 img {
-  max-height: 58px;
+  max-height: 68px;
+  border-radius: 15px;
 }
 .container {
   display: grid;
@@ -246,14 +221,36 @@ img {
   grid-template-rows: repeat(16, 1fr);
   height: 85vh;
   width: 90vw;
-  align-self: center;
 }
 .-self {
   grid-column: 9/-1;
   grid-row: 9/-1;
+  display:flex;
+  position:relative;
+  padding: 18%;
+  flex-wrap: wrap;
+  height: 100%;
+  width:100%;
   animation: mymove1 3s infinite;
   background-color: gray;
-  align-items: center;
+  align-content: center;
+  justify-content: center;
+}
+
+h3{
+  display:flex;
+  justify-content:center;
+  align-content:center; 
+  border-radius:50%;
+  height:2rem;
+  width:2rem;
+  /* background-size: 2rem; */
+  background-color: lightblue;
+}
+.-self.name{
+  right:1px;
+  bottom:1px;
+  background-color: deeppink;
 }
 @keyframes mymove1 {
   from {
@@ -263,38 +260,59 @@ img {
     background-color: gray;
   }
 }
-.-selfN {
-  grid-column: 9/-1;
-  grid-row: 9/-1;
-  background-color: gray;
-  align-items: center;
-}
 .-right {
   grid-column: 9/-1;
   grid-row: 1/9;
+  height: 100%;
+  width:100%;
+  display: flex;
+  flex-wrap: wrap;
+  padding: 18%;
   background-color: pink;
-  align-items: center;
+  align-content: center;
+  justify-content: center;
+}
+.-right.name{
+  right:1px;
+  top:1px;
+  background-color: deeppink;
 }
 .-cross {
   grid-column: 1/9;
   grid-row: 1/9;
+   height: 100%;
+  width:100%;
+  display: flex;
+  flex-wrap: wrap;
+  padding:18%;
   background-color: rgb(202, 245, 133);
-  align-items: center;
+  align-content: center;
+  justify-content: center;
 }
 .-left {
   grid-column: 1/9;
   grid-row: 9/-1;
+   height: 100%;
+  width:100%;
+   display: flex;
+   flex-wrap: wrap;
+   padding:18%;
   background-color: yellow;
-  align-items: center;
+  align-content: center;
+  justify-content: center;
 }
 .-center {
   grid-column: 7/11;
   grid-row: 7/11;
+  display: inline-flex;
   animation: mymove 3s infinite;
+  border-radius: 15px;
   background: darkgreen;
   color: white;
   align-items: center;
   justify-content: center;
+  opacity: 0.8;
+  z-index: 5;
 }
 
 .selected {
@@ -332,19 +350,27 @@ img {
     background-color: red;
   }
 }
-.-centerN {
+/* .-centerN {
   grid-column: 7/11;
   grid-row: 7/11;
   background: darkgreen;
   color: white;
   align-items: center;
   justify-content: center;
-}
+} */
 .-self:hover{
     cursor: pointer;
 }
-.container > div {
+/* .container > div {
   display: flex;
   justify-content: center;
+  border-radius: 15px;
+  flex-wrap: wrap;
+} */
+@media only screen and (max-width: 400px) {
+
+  .container>div {
+    flex-direction: column;
+  }
 }
 </style>

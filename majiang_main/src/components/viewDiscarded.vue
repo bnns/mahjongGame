@@ -1,59 +1,71 @@
-<template >
-  <div id="viewdiscarded" class='container'>
+<template>
+  <div  class='container'>
   <div class='_self'>
-    <a class="selfS" 
-   
-    @click="$emit('getTile', self)">
-     <!-- v-on="getTile(self).length < 14 ? {click: $emit('getTile', self)} : {}"> -->
-    <img src="../assets/back_m.png" alt="image lost"/>
-    <h4 class='length'>{{tilesOnTableLength}}</h4></a>
-    <img v-for = '(tile, index) in getdiscardedTiles(`${self}`)'
+    <a class="tile-back-tail" 
+       @click="$emit('getTile', self)">
+       <img src="../assets/back_m.png" alt="image lost"/>
+       <h4 class='tail'>{{tilesOnTableLength}}</h4>
+    </a>
+    <div class="self-b">
+       <img v-for ='(tile, index) in getDisCardedTiles(`${self}`)'
+            :key ='index'
+            :src="require(`../assets/${tile.url}.png`)"
+            :alt="`${tile.url}`"
+            
+             v-on:click="tileClicked(`${self}`,`${tile.tileSort}`)"/>
+    </div>
+    <button class='nameS color'
+            :class='goAhead[self]&&myTurn'
+            @click="$emit('mahjiong', self)">
+                <!-- pong, chow, pair for hula -->
+            {{users?users[self].name:'Here'}}
+    </button>
+    <div class="seat">{{users[self].mySeat}}</div>
+</div>    <!-- sort tiles -->
+
+  <div class='_right'>
+     <div class="right-b">
+    <img v-for='(tile, index) in getDisCardedTiles(`${right}`)'
          :key ='index'
          :src="require(`../assets/${tile.url}.png`)"
          :alt="`${tile.url}`"
-         class='self'
-           v-on:click = " tileClicked(`${self}`,`${tile.tileSort}`)"
-         /><p class='nameS'
-                :class='goAhead[self]&&myTurn'
-                @click="$emit('mahjiong', self)">
-           {{users?users[self].name:'Here'}}</p>
-  </div>    <!-- sort tiles -->
-
-  <div class='_right'>
-    <!-- <a class='right-b' -->
-    <!-- v-on:click="action(`${right}`)"> -->
-    <!-- </a> -->
-    <img class='right-b' v-for = '(tile, index) in getdiscardedTiles(`${right}`)'
-         :key = 'index'
-         :src="require(`../assets/${tile.url}.png`)"
-         :alt="`${tile.url}`"
-           v-on:click = "tileClicked(`${right}`,`${tile.tileSort}`)"
-         /><h3 class='nameR'
-         :class='goAhead[right] && myTurn'>{{users[right].name}}</h3>
+           v-on:click="tileClicked(`${right}`,`${tile.tileSort}`)"
+         />
+     </div><h3 class='nameR color'
+         :class='goAhead[right]&&myTurn'>{{users[right].name}}</h3>
+          <div class="seat">{{users[right].mySeat}}</div>
   </div>
   <div class='_cross'>
-    <!-- <a class='cross-b' -->
-      <!-- v-on:click="action(`${cross}`)"> -->
-    <!-- </a> -->
-    <img class='cross-b' v-for = '(tile, index) in getdiscardedTiles(`${cross}`)'
-         :key = 'index'
+    <div class="cross-b" >
+         <img  v-for='(tile, index) in getDisCardedTiles(`${cross}`)'
+         :key='index'
          :src="require(`../assets/${tile.url}.png`)"
          :alt="`${tile.url}`"
-           v-on:click = "tileClicked(`${cross}`,`${tile.tileSort}`)"
-         /><h3 class='nameC'
-         :class='goAhead[cross]&&myTurn'>{{users[cross].name}}</h3>
+           v-on:click="tileClicked(`${cross}`,`${tile.tileSort}`)"
+         />
+    </div><h3 class='nameC color'
+         :class='goAhead[cross]&&myTurn'>
+         {{users[cross].name}}</h3>
+          <div class="seat">{{users[cross].mySeat}}</div>
   </div>
   <div class='_left'>
-    <!-- <a class='left-b' -->
-     <!-- v-on:click="action(`${left}`)"> -->
-    <!-- </a> -->
-    <img class='left-b' v-for = '(tile, index) in getdiscardedTiles(`${left}`)'
-         :key = 'index'
-         :src="require(`../assets/${tile.url}.png`)"
-         :alt="`${tile.url}`"
-         v-on:click = "tileClicked(`${left}`,`${tile.tileSort}`)"
-         /><h3 class='nameL'
-         :class='goAhead[left]&&myTurn'>{{users[left].name}}</h3>
+     <a class="tile-back-front" 
+       @click="$emit('getTile', self)">
+       <img src="../assets/back_m.png" alt="image lost"/>
+       <h4 class='front'>{{frontTileBack}}</h4>
+    </a>
+    <div class="left-b">
+         <img  v-for='(tile, index) 
+              in getDisCardedTiles(`${left}`)'
+              :key ='index'
+              :src="require(`../assets/${tile.url}.png`)"
+              :alt="`${tile.url}`"
+              v-on:click="tileClicked(`${left}`,`${tile.tileSort}`)"
+         />
+    </div><h3 class='nameL color'
+             :class='goAhead[left]&&myTurn'>{{users[left].name}}
+         </h3>
+          <div class="seat">{{users[left].mySeat}}</div>
   </div>
   </div>
 </template>
@@ -62,10 +74,10 @@
   import { mapGetters } from 'vuex'
 
   export default {
-  //name: 'viewdiscarded',
+  name:'ViewDiscarded',
   props: ['self', 'right', 'cross', 
   'left', 'users', 'goAhead', 
-  "tilesOnTableLength"],
+  'tilesOnTableLength','frontTileBack'],
       data () {
        return {
          myTurn: 'inturn',
@@ -74,18 +86,30 @@
 
       computed: {
         ...mapGetters ([
-       'getPublicTiles',
-       'getdiscardedTiles'
+          'getTiles',
+          'getDisCardedTiles'
         ]),
       },
 
       methods: {
-  action(a){this.getPublicTiles(a)},
-  tileClicked(b, c){//a:tile group, c: tile id
-    window.console.log(b + c)
-    }
-  }
-}
+      // action(a){this.getPublicTiles(a)},
+      tileClicked(b, c){//b:hand.index, c:tile.tileSort
+      let peng=0, chow=0
+      this.getTiles(b).forEach(ele=> 
+          {if(b!==this.self){(ele.tileSort===c)
+           ?peng++
+           :window.console.log("不能碰，吃!"+b+"/?"+c)}
+           if(b+1===this.self||this.self+3===b)
+           {(ele.tileSort===c-1||c+1)
+            ?chow++
+            :window.console.log("吃？!"+b+"/?"+c)
+           }
+            window.console.log("Peng", peng)
+            window.console.log("Chow", chow)
+           });
+         }
+        }//methods
+      }
 </script>
 <style scoped>
   * {
@@ -94,109 +118,162 @@
   }
  img {
    height: 7vh;
-   width: 5vh;
+   width: 5.5vh;
  }
- /* ._right img{ */
-   /* height: 5vh; */
-   /* width: 7vh; */
- /* } */
+
  .container{
-  display: grid;
-  grid-template-columns: repeat(16, 1fr);
-  grid-template-rows: repeat(16, 1fr);
+   display: grid;
+   grid-template-columns: repeat(16, 1fr);
+   grid-template-rows: repeat(16, 1fr);
    height: 70vh;
    width: 80vw;
    align-self: center;
    justify-self: center; 
  }
+ .seat{
+   display:flex;
+   position:absolute;
+   left:50%;
+   top:50%;
+   transform: translate(-50%, -50%); 
+   font-style:italic;
+   color:rgb(4, 37, 21);
+ }
  ._self {
    position: relative;
-   display: flex;
    flex-wrap: wrap;
    grid-column: 9/-1;
    grid-row: 9/-1;
-   background-color: gray;
+   background-color: rgb(221, 97, 14);
  }
+ .self-b{
+   position:absolute;
+   display: inline-flex; 
+   flex-wrap:wrap;
+   top:0px;
+ }
+ .tile-back-tail{
+   position: absolute;
+   left: 2px;
+   bottom: 1px;
+   display: grid;
+   grid-template:1fr 1fr;
+   align-items: center;
+   justify-items: center;
+}
+ .tail{
+  position: absolute;
+  color:white;
+}
+
  ._right {
    position: relative;
-   display: flex;
    flex-wrap: wrap;
    grid-column: 9/-1;
    grid-row: 1/9;
    background-color: pink;
-   flex-direction: row;
-   align-items: flex-end;
  }
  .right-b{
-   display: flex;
-   flex-direction: column;
-
+   position:absolute;
+   display: inline-flex; 
+   flex-wrap:wrap-reverse;
+   bottom:0px;
  }
  ._cross {
    position: relative;
-   display: flex;
    flex-wrap: wrap;
    grid-column: 1/9;
    grid-row: 1/9;
-   background-color: blue;
-   flex-direction: row-reverse;
+   background-color: rgb(91, 91, 238);
  }
  .cross-b{
-   align-self: flex-end;
+  position:absolute; 
+  display:flex;
+  flex-wrap: wrap-reverse;
+  flex-direction: row-reverse;
+  bottom:0vh;
+  right:0vh;
  }
- ._left {
+._left {
    position: relative;
-   display: flex;
-   flex-wrap: wrap;
    grid-column: 1/9;
    grid-row: 9/-1;
    background-color: yellow;
-   flex-direction: row;
-   align-content: flex-end;
-   transform: rotate(180deg); 
  }
  .left-b{
-   align-self: flex-start;
+   position:absolute;
+   display:inline-flex;
    flex-wrap: wrap;
-   transform: rotate(180deg);
+   flex-direction: row-reverse;
+   right:0vh;
+   top:0vh; 
  }
+.tile-back-front{
+   position: absolute;
+   bottom:1px;
+   right:2px;
+    display: grid;
+   align-items: center;
+   justify-items: center;
+}
+.front{
+  position: absolute;
+  color:white;
+ 
+}
 .nameS {
   position: absolute;
   display: flex;
-  right: 2%;
-  bottom: 5%;
+  font-size: 1.5rem;
+  font-weight: 400;
+  font-family: sans-serif;
+  right: 5px;
+  bottom: 5px;
+  padding: 0;
+  border-radius: 8px;
+  background: rgb(91, 91, 238);
 }
-.selfS{
-  position: absolute;
-  display: flex;
-  left: 2%;
-  bottom: 5%;
-}
-.length{
-  position: absolute;
-  z-index: 1;
-  left: 3%;
-  bottom: 1%;
-}
+
 .nameR {
   position: absolute;
-  display: flex;
-  transform: rotate(-90deg);
-  right: 0%;
-  top: 10%;
+  font-size: 1.5rem;
+  font-weight: 400;
+  font-family: sans-serif;
+  padding: 0;
+  border: 1px solid gray;
+  background-color:yellow ;
+  border-radius: 8px;
+  writing-mode: vertical-rl;
+  text-orientation: sideways;
+  transform: rotate(180deg);
+  right: 5px;
+  top: 5px;
 }
 .nameC {
   position: absolute;
   display: flex;
-  left: 0%;
-  top: 5%;
+  font-size: 1.5rem;
+  font-weight: 400;
+  font-family: sans-serif;
+  border: 1px solid gray;
+  border-radius: 8px;
+  background-color:rgb(221, 97, 14);
+  left: 5px;
+  top: 5px;
 }
 .nameL {
   position: absolute;
   display: flex;
-  transform: rotate(-90deg);
-  right: 0%;
-  top: 10%;
+  font-size: 1.5rem;
+  font-weight: 400;
+  font-family: sans-serif;
+  border: 1px solid gray;
+  border-radius: 8px;
+  background-color:pink;
+  writing-mode: vertical-rl;
+  text-orientation: sideways;
+  left: 5px;
+  bottom: 5px;
 }
 .inturn {
    animation: mymove 4s infinite;
@@ -220,7 +297,7 @@
        justify-self: center;
      }
      img {
-       height: 6vh;
+       height: 7vh;
      }
      /* ._left>img { */
        /* width: 6vw; */
@@ -248,7 +325,7 @@
      justify-self: center;
    }
    img {
-     height: 6vh;
+     height: 7vh;
    }
   }
 </style>
