@@ -24,21 +24,25 @@ let temp = new Array(4);
 
    io.on("connection",(socket)=>{
    console.log(`Socket ${socket.id} connected.`);
-  //  if(users){console.log(users)}
-  // socket.emit('wasconnected')
-  // socket.on('current',data=>{
-    //  if(data!=='new'){
-    //    let index
-    //    users.map((ele,i)=>{
-    //      console.log(ele.userId+"/"+"33")
-    //      (ele.roomId===data[1]&&ele.userId===data[2])//?????????????????
-    //      ?index=i
-    //      :"" })
-    //    if(users){users[index].id=socket.id}
-    //    console.log(users[index].name+"comes back at room)"+users[index].roomId)
-    // checkRoom()}
+
+  //  if(users.length!==0){console.log(users)
+  socket.emit('wasconnected');
    
-   
+  socket.on('current',data=>{
+    console.log("wasconnected?","/", data.userId,' / ',socket.id);
+     if(!data){ return}
+     else{console.log(data,"/comms back",users.map((e=>
+      e.userId)))
+       let index
+       users.map((ele,i)=>{
+         //(ele.roomId===data[0])//?????????????????
+         if(ele.userId===data[1])
+          { (index=i, console.log(users[index].id+" / 33/ "+data[1]))}
+           else{return}})
+       users[index].id=socket.id
+       console.log(users[index].name+"comes back at room)"+users[index].roomId)
+    checkRoom()}
+       });
    //clients[socket.id]=socket
    socketMemo.push(socket.id);
 
@@ -52,14 +56,15 @@ let temp = new Array(4);
       id: socket.id,
       userId: getId.getId(8),
       dealer: false,
-      seat:'',
+      // seat:'',
     });
- // room[roomNumb].push(users);//????
+ // room[roomNumb].push(users);//??????????????????????????????????
     if (users.length===5){
       users.pop();
     }
     let i=users.length-1;
     users[i].index=i;
+    // users[i].userId=getId.getId(8);
     socketMemo=[];
     io.emit("loggedIn",users);
  // })
@@ -70,10 +75,11 @@ let temp = new Array(4);
         (memberCounter=4)
       } 
       users[data.index].id=data.socketId;
+      users[data.index].userId=data.userId
       users[data.index].name=data.name;
       users[data.index].roomId=data.roomId;
       users[data.index].loggedIn=data.loggedIn
-      console.log(`${data.name} comes in room ${data.roomId} now !`);
+      console.log(`${users[data.index].userId} comes in room ${data.roomId} now !`);
 
       io.emit("userOnline", users[data.index]);
       (users.length!==4)
@@ -81,15 +87,15 @@ let temp = new Array(4);
       :checkRoom()//see status of the room
       });
     //find any who left the room...
-   socket.on('ping1',(data)=>{//only socket and 'ping1'work?????
-       users.map((user)=>{
-         user.roomId===data.roomId
-           ? user.userId===data.userId
-             ?(user.id=data.id)
-             :""//1/4 sockets match
-             :""//always find 1/4>>>>>
-       });
-   });
+  //  socket.on('ping1',(data)=>{//only socket and 'ping1'work?????
+  //      users.map((user)=>{
+  //        user.roomId===data.roomId
+  //          ? user.userId===data.userId
+  //            ?(user.id=data.id)
+  //            :""//1/4 sockets match
+  //            :""//always find 1/4>>>>>
+  //      });
+  //  });
 
    //from after doDicing() 
    socket.on("diceChange",data=>{
@@ -157,8 +163,8 @@ let temp = new Array(4);
           tiles.splice(k, 1)
       }
       tiles=randomTiles(shuffled);
-     // setTimeout(()=>{},5000);
-      io.emit("sitDown")
+      setTimeout(()=>{io.emit("sitDown")},4000);
+      // io.emit("sitDown")
       }
   }),
  
@@ -168,6 +174,7 @@ let temp = new Array(4);
      seat++;
      if (seat===4){
        let data=[...temp]
+       users=data//consis users with vuex state
        seat=0
        let tileWalls=tilesMade(data, tiles);
        io.emit('ready1', [{onHands:tileWalls[0], 
@@ -180,20 +187,6 @@ let temp = new Array(4);
 
     socket.on('start', data=>
          socket.broadcast.emit('start1', data))
-    
-    // socket.on('makeWalls', data=>{//data[0]=players, data[1]=goAhead
-    //   dupCounter++
-    //   if(data.length!==2){ return}
-    //   if(dupCounter===4){//wait for 4 players
-    //     let tileWalls=tilesMade(data[0], tiles);
-    //     //setTimeout(()=>{}, 5000);
-    //     io.emit('setTiles',[{onHands:tileWalls[0], 
-    //       onTable:tileWalls[1],
-    //       allTiles:tiles},
-    //       data[1]]
-    //       )//{data}emited on 164
-    //   }
-    // })
 
        socket.on('sort',a=>{
         socket.broadcast.emit('sort1',a)
@@ -203,7 +196,7 @@ let temp = new Array(4);
       socket.broadcast.emit('deserted1',data))
                           
        socket.on('disTile',data =>{//data=self, tile.id
-         io.emit('disTile1',data)
+         socket.broadcast.emit('disTile1',data)
        }), 
        
        socket.on('inTurn',data =>{
@@ -219,12 +212,20 @@ let temp = new Array(4);
       //  })
        socket.on('getTile',data =>{//viewDiscarded, self 
          socket.broadcast.emit('getTile1',data)
+       // io.emit('getTile1',data)
+       })
+       socket.on('pengChowKong', payload=>{
+         io.emit('pengChowKong1', payload)
+       })
+       socket.on('updateCasted', ()=>
+       socket.broadcast.emit('updateCasted1'))
+       socket.on('mahjiong', data=>{
+         io.emit('mahjiong1', data)
        })
        //io.on deffer from socket.on!!!!
        socket.on("disconnect",()=>{
-         let itemIdx 
-         let roomleft 
-         let userleft
+         let itemIdx,  roomleft, 
+         userleft
          users.map((user,idx)=>{
            if(user.id===socket.id)
            {itemIdx=idx,roomleft=user.roomId,userleft=user.userId}
@@ -243,9 +244,9 @@ let temp = new Array(4);
         // let roomLeft=users[itemIdx].roomId;//??????????????????????
         console.log(userleft+" left from room "+ roomleft);
         io.emit("loggedOut",userleft);
-        users.splice(itemIdx,1);
-        memberCounter--;
-        if(users.length===0){refreshServer()}
+        // users.splice(itemIdx,1);
+        // memberCounter--;
+        // if(users.length===0){refreshServer()}
       });
 });
 
@@ -254,22 +255,25 @@ function getRandomizer(bottom, top){
   *(1+top-bottom))+bottom;
 };
 
-function sendHeartbeat(){
-  setTimeout(sendHeartbeat,99000);//every 8 seconds
-     io.sockets.emit('ping',{beat:1});
-  }//what if disconnected?
+// function sendHeartbeat(){
+//   setTimeout(sendHeartbeat,99000);//every 8 seconds
+//      io.sockets.emit('ping',{beat:1});
+//   }//what if disconnected?
+
+// app.route('/', (req, res)=> res.send(index)) )
 
 function checkRoom(){
   console.log("just check")
   if(users.length===4){
     io.emit("Full",users),
     memberCounter=0,
-    socketMemo=[],
-    setTimeout(sendHeartbeat, 80000)
+    socketMemo=[]
+    // setTimeout(sendHeartbeat, 80000)
     }
 }
 
 function refreshServer(){
+  return
   memberCounter=0;
   console.log("refresh server");
   users=[];

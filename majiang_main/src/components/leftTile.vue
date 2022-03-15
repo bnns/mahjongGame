@@ -1,56 +1,47 @@
 <template>
   <div class="left">
-   
       <img v-for="tile in leftTiles" 
       :key="tile.index" 
-      :src="require(`../assets/${tile.url}.png`)" 
-      :alt="`tile.url`"/>
-    
+      :class="{active: tile.chiPenGan!==0}"
+      :src="require(`../assets/${tile.chiPenGan!==0?tile.url+'_s.png':'standLeft.png'}`)"
+      :alt="`${tile.url}`"/>
   </div>
-
 </template>
 <script type="text/javascript">
 //import { mapGetters } from 'vuex';
   export default {
     name: 'LeftTile',
-    components: {},
     props: ['left', 'leftTiles'],
     data () {
       return {
     }
   },
-
-  // computed: {
-    //  ...mapGetters ([
-    // 'getTiles'
-    // ]),
-
-    // leftTiles: {
-     // cache: false,
-      // get() {
-      // let a = this.getTiles(this.left)
-      // if(a){
-      // a.map((e) => (e.chiPenGan)
-      // ?(e.url = `${e.url}`)
-      // :e.url = 'standLeft')
-      // }
-      // return a
-      // },
-    // },
-  //},
+  watch:{
+    deep: true,
+    leftTiles:{
+      handler(val){
+        //  if(!val){this.$emit('findMyVal')}
+        return val
+      }
+    }
+  }
 }
 </script>
 <style scoped>
    .left {
      display: flex;
      flex-direction: column;
+     position: relative;
      padding: 0;
-     justify-self: center;
-     align-self: start;
-     margin: auto auto;
+     justify-content: center;
+     align-items: flex-end;
    }
    img{
      height: 7vh;
+   }
+   .active{
+     padding:2px;
+     border-block-color: white;
    }
    /* @media screen and (max-width: 400px) {
        img {

@@ -95,7 +95,7 @@
 
 //console.log(tileScanner(handTile, '211'))
 
-function tileScanner (tile, t){
+function tileScanner (tile, t){//tile just got
     tile = tile.sort((a, b)=>(a.tileSort - b.tileSort))
     let x = tile.length, peng = [], chain = [];// found = false;
     if(t){
@@ -120,6 +120,7 @@ function tileScanner (tile, t){
         }
       }
     }
+  }
     function chainFinder (tile, n){
        tile.forEach((e) => {
          if (e.tileSort == JSON.stringify(n))
@@ -144,7 +145,6 @@ function tileScanner (tile, t){
     // } 
     return [[peng, 'peng'], [chain,'chain']]
  }
-}
     
 
     // function deDup (dup){

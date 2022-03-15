@@ -20,7 +20,7 @@
 <script>
 export default{
   name:"Login",
-  props:["counter","name",'roomId',"mySocketId"],
+  props:["counter","name",'myId','roomId',"mySocketId"],
   data(){
     return{
       roomNumb:this.roomId,
@@ -57,6 +57,7 @@ export default{
     submit(){
       this.user.loggedIn = true;
       this.user.name = this.username;
+      this.user.userId= this.myId;
       this.user.index = this.counter - 1;
       this.user.socketId = this.mySocketId;
       this.user.roomId = this.roomNumb;

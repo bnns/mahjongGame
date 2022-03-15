@@ -240,10 +240,10 @@ img {
 h3{
   display:flex;
   justify-content:center;
-  align-content:center; 
+  align-items:center; 
   border-radius:50%;
-  height:2rem;
-  width:2rem;
+  /* height:2rem;
+  width:2rem; */
   /* background-size: 2rem; */
   background-color: lightblue;
 }

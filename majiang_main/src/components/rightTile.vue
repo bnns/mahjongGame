@@ -1,47 +1,60 @@
-<template >
+<template>
   <div class="right">
-    <img v-for="tile in rightTiles" 
-    :key="tile.index" 
-    :src="require(`../assets/${tile.url}.png`)" 
-    :alt="`tile.url`"/>
+    <img
+      v-for="tile in rightTiles"
+      :key="tile.index"
+      :class="{ active: tile.chiPenGan !== 0 }"
+      :src="
+        require(`../assets/${
+          tile.chiPenGan !== 0 ? tile.url + '_s.png' : 'standRight.png'
+        }`)
+      "
+      :alt="tile.url"
+    />
   </div>
 </template>
 <script type="text/javascript">
-//import { mapGetters } from 'vuex'
-  export default {
-   name: 'RightTile',
-   components: {},
-   props: ['right', 'rightTiles'],
-   data () {
-    return {
-    }
+import { mapGetters } from 'vuex'
+export default {
+  name: "RightTile",
+  props: ["right", "rightTiles"],
+  data() {
+    return {};
   },
-watch:{
-  rightTiles(val, val1){
-    return val1
+   computed: {
+    ...mapGetters([
+      'getTiles'])},
+  watch: {
+    deep: true,
+    rightTiles: {
+      handler(val) {
+       return val;
+      },
+    },
   },
-  deep: true
-}
-  
-}    
+};
 </script>
 <style scoped>
-   .right {
-     display: flex;
-     padding: 0;
-     flex-wrap: nowrap;
-     flex-direction: column;
-     justify-content: space-evenly;
-     /* align-items: start; */
-   }
-   img{
-      height: 7vh;
-   }
-   /* @media screen and (max-width: 500px) {
+.right {
+  display: flex;
+  position: relative;
+  padding: 0;
+  flex-wrap: wrap;
+  flex-direction: column;
+  justify-content: space-evenly;
+  align-items: flex-start;
+}
+img {
+  height: 7vh;
+}
+.active {
+  padding: 2px;
+  border-block-color: white;
+}
+/* @media screen and (max-width: 500px) {
        img {
          height: 20vh;
        }
 
    } */
-
 </style>

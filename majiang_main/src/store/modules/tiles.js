@@ -13,7 +13,7 @@ const state = {
   publicTiles: [], //tiles yet to deal||left over of tilesAll
   takeFromFront:0,
 };
-
+console.log(state.tilesOnHands)
 const actions = {
   startTiles({ commit }, arg) {
     commit("allTiles", arg.allTiles); 
@@ -51,7 +51,7 @@ const mutations={
   allTiles:(state, arg)=>(state.tilesAll = arg), //all washed tiles to start
   setTiles:(state, arg)=>(state.tilesOnHands = arg),//yourStartTiles()), //in hands of 4 players
   consisTileOnHands:(state, arg)=>(state.tilesOnHands[arg[0]]=arg[1]),
-  consisTilesDiscard:(state, arg)=>(state.discardedTiles[arg[0]]=arg[1]),
+  consisTilesDiscard:(state, arg)=>(state.discardedTiles=arg[1]),
   setPublicTiles:(state, arg)=>(state.publicTiles=arg),// publicWall(state.tilesAll)), //left on table center
   players: (state, arg)=>(state.players=arg),
   tileChosen: (state, arg)=>
@@ -60,14 +60,12 @@ const mutations={
         e.chosen = !e.chosen;//true or false?
       }
     }), 
-  fromFront:(state)=>{alert("aaa")
+  fromFront:(state)=>
     state.takeFromFront++,
-    window.console.log("AAAAAAAAAA")
-  },
   tilesUpdt: (state, arg)=>{
     if(arg[0]==="relocate"){//tile from [2] to [1], --relocating
       let a, b=Number(arg[5]), c
-      state.tilesOnHands[arg[1]].map((ele,i)=>(
+      state.tilesOnHands[arg[1]].forEach((ele,i)=>(
       (ele.id===b)?(a=i, c=ele):window.console.log("doNothing")))
       state.tilesOnHands[arg[1]].splice(a,1)
       state.tilesOnHands[arg[1]].splice(arg[2],0,c)
@@ -84,13 +82,35 @@ const mutations={
       state.tilesOnHands[arg[1]].push(c)}
     }
     else if(arg[0]==="inserted"){
-        if(state.tilesOnHands[arg[1]].length===13)
+        if(state.tilesOnHands[arg[1]].length===13)//tilesCount???
         {let a=state.publicTiles.shift()
         state.tilesOnHands[arg[1]].push(a)}
     }
     else if(arg[0]==="sorting"){
       sortGrouping(state, arg[1])
     }
+    else if(arg[0]==="peng"||arg[0]==="chow"||arg[0]==="kong"){//[1]=index,[2]=tileId,[3]=self
+      window.console.log(arg)
+      let a
+      state.discardedTiles[arg[1]].map((e, i)=>{
+     if(e.id===arg[2]){
+      a=state.discardedTiles[arg[1]].slice(i,i+1),
+      window.console.log(a[0])
+      state.discardedTiles[arg[1]].splice(i,1)//?????????????
+      }})
+      console.log(state.tilesOnHands[arg[3]], '//arg[3]//', arg[3])
+    state.tilesOnHands[arg[3]].push(a[0])
+    state.tilesOnHands[arg[3]].forEach(e=>{
+      if(a[0].tileSort===e.tileSort){e.chiPenGan=(arg[0]==="chow")
+      ?1:(arg[0]==='peng')?2:(arg[0]==='kong')?3:""}
+    })
+    }
+    // else if(arg[0]==="chow"){
+    //   window.console.log(arg)
+    // }
+    // else if(arg[0]==="kong"){
+    //   window.console.log(arg)
+    // }
   },
   myNumber: (state, arg)=>{
     state.dicedNumber.splice(arg[0], 1, arg[1]); 
@@ -99,13 +119,17 @@ const mutations={
 // discardedTiles: state=>state.discardedTiles=tileMaker(),
 const getters = {
   getTiles:(state)=>(index)=>{
-    state.tilesOnHands[index];
-    return state.tilesOnHands[index];
+    if(typeof(index)==='number'){
+    return state.tilesOnHands[index]}
+   else{return state.tilesOnHands}
   },
   // retrive datas: state => state.tilesAll,
-  getDisCardedTiles:(state)=>(index)=>state.discardedTiles[index],
+  getDisCardedTiles:(state)=>(index)=>{
+    if(typeof(index)==='number')
+    {return state.discardedTiles[index]}
+  else{return state.discardedTiles}},
   getPublicTiles:(state)=>(index)=>{//????
-    if(state.tilesOnHands[index].length<14){
+   if(state.tilesOnHands[index].length<14){//tilesCount
       state.tilesOnHands[index].push(state.publicTiles.pop());
     }
   },

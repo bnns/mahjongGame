@@ -73,9 +73,9 @@ const tileMaker = () => {
           tiles.push({
             url: dragon[i],
             tileType: "dragon",
-            tileSort: "22" + `${i}`,
+            tileSort: 220 + i,
             chosen: false,
-            chiPenGan: false,
+            chiPenGan: 0,
             id: id++,
           });
         }
@@ -83,9 +83,9 @@ const tileMaker = () => {
           tiles.push({
             url: wind[i],
             tileType: "wind",
-            tileSort: "21" + `${i}`,
+            tileSort: 210 + i,
             chosen: false,
-            chiPenGan: false,
+            chiPenGan: 0,
             id: id++,
           });
         }
@@ -93,10 +93,10 @@ const tileMaker = () => {
           aName[j] = order[i] + "_" + suites_name[k];
           tiles.push({
             url: aName[j],
-            tileType: "suite",
-            tileSort: "1" + `${k}` + `${i}`,
+            tileType: "suit",
+            tileSort: 100 + k*10 + i,
             chosen: false,
-            chiPenGan: false,
+            chiPenGan: 0,
             id: id++,
           });
         }
@@ -104,22 +104,23 @@ const tileMaker = () => {
           tiles.push({
             url: season[j],
             tileType: "season",
-            tileSort: "33" + `${j}`,
+            tileSort: 330 + j,
             chosen: false,
-            chiPenGan: false,
+            chiPenGan: 0,
             id: id++,
           });
           tiles.push({
             url: flower[j],
             tileType: "flower",
-            tileSort: "32" + `${j}`,
+            tileSort: 320 + j,
             chosen: false,
-            chiPenGan: false,
+            chiPenGan: 0,
             id: id++,
           });
         }
       }
     }
+    // let a=tiles.map(e=>Number(e.tileSort));
     return tiles;
   };
 

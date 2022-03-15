@@ -10,34 +10,46 @@
                         @casting='casting'/>
         </div>
         <div class="cross" v-show="show">
-      <CrossTile :cross="cross"
-                 :crossTiles="crossTiles"/>
+             <CrossTile :cross="cross"
+                        :crossTiles="crossTiles"
+                      />
         </div>
         <div class="left" v-show="show">
-      <LeftTile :left="left"
-                :leftTiles='leftTiles'/>
+             <LeftTile :left="left"
+                       :leftTiles='leftTiles'/>
         </div>
         <div class="right" v-show="show">
-      <RightTile :right="right"
-                 :rightTiles="rightTiles" />
+             <RightTile :right="right"
+                        :rightTiles="rightTiles" />
         </div>
 
         <div class="center" v-show="show">
-            <ViewDiscarded
+             <ViewDiscarded
               :self="self"
               :right="right"
               :left="left"
               :cross="cross"
               :users="users"
+              :myTiles='myTiles'
               :goAhead='goAhead'
+              :chowAllowed='chowAllowed'
+              :pengAllowed='pengAllowed'
               :frontTileBack="frontTileBack"
-              @mahjiong="hula"
+              :discardedTiles='discardedTiles'
+              :lastCasted='lastCasted'
+              :tilesCount='tilesCount'
+              @updTilesCount='updTilesCount'
+              @updateCasted='updateCasted'
+              @pengChowKong="pengChowKong"
+              @hula="hula"
+              :mahjiong="mahjiong"
               @getTile="getTile"
               :tilesOnTableLength="tilesOnTableLength"
+              ref='ViewDiscarded'
             />
         </div>
 
-        <div class='center' v-if="stages==='dicing'">
+        <div class='center' v-if="stages==='dicing'&&!show">
             <Dicing
                :self="self"
                :right="right"
@@ -46,7 +58,6 @@
                :index='index'
                :name="name"
                :users="users"
-               :stages="stages"
                :dices="dices"
                :diceTotal="diceTotal"
                :disabled="disabled"
@@ -78,6 +89,7 @@
                @clicked="finishOnLogin"
                :counter="counter"
                :name="name"
+               :myId="myId"
                :roomId="roomNumb"
                :mySocketId="mySocketId"
             />
@@ -87,7 +99,7 @@
 <script>
 import io from "socket.io-client";
 import { mapGetters, mapActions } from "vuex";
-import {grouping, findChowHand,findPong} from "./utilities/hula";
+// import {grouping, findChowHand,findPong} from "./utilities/hula";
 //import * as tileScaner from "./utilities/tileScanner.js";
 import SelfTile from "./components/selfTile";
 import CrossTile from "./components/crossTile";
@@ -113,9 +125,10 @@ export default {
   },
   data() {
     return {
-      socket: io("http://localhost:3000"),//localhost could not be accesed by other divices
+      socket: io("http://192.168.1.128:3000"),//localhost could not be accesed by other divices
       name: "John",
       users: [],
+      tilesCount:new Array(4).fill(14),
       myRank: '',
       mySeat:'',
       myId:'',
@@ -164,28 +177,45 @@ export default {
       flowers:false,
       pengAllowed:false,
       chowAllowed:false,
+      lastCasted:[{url:'eastR'}, this.self],
+      mahjiong:null,
     };
   },
   
   created(){
+    this.users=(this.getPlayers.length!==0)
+    ?this.getPlayers
+    :[{mySeat:"EAST",
+      name:this.name
+      },{mySeat:"EAST",
+      name:this.name
+      },{mySeat:"EAST",
+      name:this.name
+      },{mySeat:"EAST",
+      name:this.name
+      }]
     let a=this.getDicedNumber
     this.goTotal(a)//show total in dicing
+    
+    // this.myTiles=this.getTiles(this.self)
 
     this.socket.on('wasconnected',()=>{
+    
+      this.mySocketId=this.socket.id;
       let data
       if(this.wasConnected){
         data=[this.roomNumb, this.myId]
-      }else{data='new', this.wasConnected=!this.wasConnected}
+      }else{data=this.wasConnected, this.wasConnected=true}
       this.socket.emit('current', data)
     })
     //need to use roomId for communication!
     this.socket.on("loggedIn", data=>{
-        // this.wasConnected=true
+        this.wasConnected=true
         this.stages='login',
-      (this.users.length===0)
+      (!this.roomNumb)
       ?(this.roomNumb=data[data.length-1].roomId, 
        this.myId=data[data.length-1].userId)
-      :window.console.log(this.roomNumb+"/"+"New joineded!");
+      :'';
       //need info server into the same room
       if(this.counter<5)//reconnect?
       {
@@ -193,17 +223,6 @@ export default {
         this.counter = data.length;
       }
      });
-      
-  //  let array=[{typeSort:122},{typeSort:123},{typeSort:124},
-  //  {typeSort:103},{typeSort:104},{typeSort:105},{typeSort:108},
-  //  {typeSort:108},{typeSort:108},{typeSort:128},{typeSort:128},
-  //  {typeSort:128},{typeSort:132},{typeSort:122}]
-
-  //  window.console.log(a=findChowHand(array))
-   //window.console.log(findPong(array))
-  //  if(a.length>1){
-      // window.console.log(grouping(a))
-    // window.console.log(grouping(array))
 
     this.socket.on("userOnline", data=>{
       // user registed online from server
@@ -261,7 +280,7 @@ export default {
            setTimeout( 
             ((this.index=0), //instru guide
             (this.stages='seating')),
-            6000
+            5000
            )}
            //seatTaken is true
            if(this.seatTaken){
@@ -295,7 +314,7 @@ export default {
        });
     //all seats selected//this action voided!!!!!!!!!!!!
     this.socket.on("sitDown",()=> 
-      {
+      { this.stages='mahjiong',
         // this.startTiles(data),//from 336 whick might not needed!!!
       // if(this.seatTaken){
     ['EAST','SOUTH','WEST','NORTH']//if seat choosen [inOrder]????
@@ -316,8 +335,7 @@ export default {
        this.inTurn='first';
        if(this.seatTaken){this.inTurn='EAST',
        (this.mySeat==='EAST')
-       ?(this.goAhead[this.self]=true,
-       window.console.log(this.goAhead))//
+       ?(this.goAhead[this.self]=true)//
        :'doNothing'}
        
         this.disabled=true;//later use
@@ -358,64 +376,116 @@ export default {
 
     this.socket.on('getTile1', data=>{//broadcasted!
       this.consisTiles(data)
+      this.lastCasted=[{url:'board'}, this.self]
     })
 
     this.socket.on('sort1', a=>{
     this.consisTiles(["sorted",a,this.getTiles[a]])
     }),
-    //identify pengable?
-    this.socket.on('deserted1', tileCastedNow=>{
-       this.myTiles.map(e=>{
-       let pengCheck=0, chowCheck=0;
-       (e.tileSort===tileCastedNow)
-       ?pengCheck++
-       :(e.tileSort===tileCastedNow-1||e.tileSort===tileCastedNow)
-       ?chowCheck++
-       :"doNothing";
-       (pengCheck>1||chowCheck>1)?this.pengAllowed=this.chowAllowed=true
-       :this.pengAllowed=this.chowAllowed=false
-       })
-       })
+
+    //identify pengable? chowable?=====================================
+    this.socket.on('deserted1', tileCastedNow=>{//[1]===areaId
+       let myTiles=this.getTiles(this.self)
+       let x=(this.self-1<0)?3:(this.self-1)
+       let justified=tileCastedNow[1]===x
+     
+       this.lastCasted=tileCastedNow
+       let pengCheck=[tileCastedNow[0].tileSort], chowCheck=[tileCastedNow[0].tileSort]
+           myTiles.map(e=>{
+           (e.tileSort===tileCastedNow[0].tileSort)
+           ?(pengCheck.push(e.tileSort), window.console.log(pengCheck.length>2))
+           :''
+           }),
+           //=================================
+           myTiles.forEach(e=>{
+           (e.tileSort===chowCheck[0]-1)&&(tileCastedNow[0].tileSort<210)   
+           ?(chowCheck.unshift(e.tileSort), chowCheck= this.backward(chowCheck))
+           :(e.tileSort===chowCheck[chowCheck.length-1]+1)
+           &&(tileCastedNow[0].tileSort<210)
+           ?chowCheck.push(e.tileSort)
+           :"doNothing";
+           })
+
+       pengCheck.length>2
+       ?(this.pengAllowed=true, window.console.log('peng ready', pengCheck))
+       :this.pengAllowed=false
+
+       chowCheck.length>2&&justified
+       ?(this.chowAllowed=true, console.log('chow ready', chowCheck))
+       :this.chowAllowed=false
+
+      //  if(chowCheck.length>2){
+      //    let tile=this.getTiles(this.self)
+      //    tile.push(tileCastedNow[0])
+      //    this.$refs.ViewDiscarded.seeIfHula(tile );
+      //    console.log('/cannot debugger!?')
+      //    }
+         // debugger????????????????????????
+    })//else check if Hula!!!!!!!!!!!!!!!!!!!!!
+    //============check chow or peng===============================
+
    // data=[this.self, this.getTiles(this.self),
         //  this.getTableTiles, this.getDisCardedTiles(this.self), flowers])
-    this.socket.on('disTile1', data=>{//might have bug here
-       if(data[5]){this.consisTiles([data[0],
-       data[1],data[2],data[3],data[4]])
-       window.console.log(data[5]); return}
+    this.socket.on('disTile1', data=>{
+     // this.lastCasted=data[5]
+      this.flowers=data[4]
+       this.consisTiles([data[0],data[1],data[2],data[3]])
+      //  this.$set(this.discardedTiles, this.getDisCardedTiles())
+       if(!data[4]){
+         let x=this.getTiles(this.self)
+         if(x.length===this.tilesCount[this.self]){alert("you not done yet!"); return}
        let a=['SOUTH', 'WEST', 'NORTH', 'EAST', 'SOUTH'];
        let i=a.findIndex(e=>e===this.inTurn);//find the first match
        this.disabled=true;
        this.inTurn=a[i+1], this.socket.emit('inTurn', this.inTurn);//inTurn moves to next
-     
-       this.consisTiles([data[0],data[1],data[2],data[3],data[4]])
-       if(this.inTurn===this.mySeat&&data[4]<330){
+       //}
+      //  this.consisTiles([data[0],data[1],data[2],data[3],data[4]])
+       if(this.inTurn===this.mySeat){
           this.goAhead.fill(false)
           this.goAhead[this.self] = true;
           this.socket.emit('goahead', this.goAhead)
-       }
+       }}else{this.updTakeFromFront()}
     })
-     this.socket.on('ping',()=>
-     { 
-         let payload;
-         {
-       let lastId=this.mySocketId;
-       this.mySocketId=this.socket.id;
+    this.socket.on('pengChowKong1', payload=>{
+             if(this.self!==payload[3]){this.disabled=true}
+             this.pengAllowed=this.chowAllowed=false
+             this.goAhead.fill(false)
+             this.goAhead[payload[3]]=true;//[4]=areaId
+             this.inTurn=this.seatsObject[payload[3]]
+             this.socket.emit('goahead', this.goAhead)//added for it
+             setTimeout(()=>{ this.updMyTiles(payload)},4000);
+      //  this.updMyTiles(payload)
+    })
+    this.socket.on('updateCasted',()=>
+       this.lastCasted=[{url:'board'}, this.self])
+
+    this.socket.on('mahjiong1', data=>{//myTiles
+        window.console.log("mahjiang!!!!", data),
+        this.mahjiong=data
+    })
+
+    //  this.socket.on('ping',()=>
+    //  { 
+    //      let payload;
+    //      {
+    //    let lastId=this.mySocketId;
+    //    this.mySocketId=this.socket.id;
        
-       payload={
-       roomId: this.roomNumb,
-       lastId: lastId,
-       userId: this.myId,//when logged in assigned
-       id:this.mySocketId,
-       };
-        this.socket.emit('ping1', payload)
-       //this.socket.emit("reconnect", payload);
-      }
+    //    payload={
+    //    roomId: this.roomNumb,
+    //    lastId: lastId,
+    //    userId: this.myId,//when logged in assigned
+    //    id:this.mySocketId,
+    //    };
+    //     this.socket.emit('ping1', payload)
+    //    //this.socket.emit("reconnect", payload);
+    //   }
       
-      // this.socket.emit('pong', payload)
-      //   window.console.log("send Pong")
+    //   // this.socket.emit('pong', payload)
+    //   //   window.console.log("send Pong")
       
-      //socket.emit('pong', {beat: 1});
-    });
+    //   //socket.emit('pong', {beat: 1});
+    // });
   },
             
   computed: {
@@ -434,80 +504,64 @@ export default {
           return a
           }
       },
-      tilesOnTableLength:{
-       get(){
+      tilesOnTableLength(){
          let a=this.getTableTiles
          if(!a){return}
          return a.length
-       }
       },
-      myTiles:{
-       get(){
-        let a=this.getTiles(this.self);
-        if(!a){return}
-       return a;
-        }
+      discardedTiles(){
+         let a=this.getDisCardedTiles()
+         if(!a){return}
+         return a
+         },
+      myTiles(){
+         return this.getTiles(this.self)
       },
-     crossTiles:{
-     get(){
-      let a=this.getTiles(this.cross)
-      if(!a){return []}
-     if(a){
-     return a.map(e=>(e.chiPenGan)
-     ? {...e, url: `${e.url}_s`}
-     : {...e, url: 'standCross'})
-           }
-         return []
-        }
+      crossTiles(){
+         return this.getTiles(this.cross)
      },
-     rightTiles:{
-     get(){
-     let a=this.getTiles(this.right)
-     if(!a){return}
-     if(a){
-     return a.map(e=>(e.chiPenGan)
-     ?{...e, url:`${e.url}_s`}
-     :{...e, url: "standRight"})
-           }
-           return []
-        },
+      rightTiles(){
+         return this.getTiles(this.right)
      },
-     leftTiles:{
-     get(){
-     let a=this.getTiles(this.left)
-     if(!a){return}
-     if(a){
-     return a.map(e=>(e.chiPenGan)
-         ?{...e, url:`${e.url}_s`}
-         :{...e, url:'standLeft'})
-           }
-     return []
-       },        
+     leftTiles(){
+         return this.getTiles(this.left)
+       }  
      },
-   },
-
-   watch:{//try to activate selfTile when tile added
+  
+   watch:{//try to activate selfTile when tile added    
      goAhead:{
           handler(val){
             this.goAhead=val
             return},
           deep: true
      },
-     myTiles:{
-          handler(val, old){
-            if(val.length===old.length){return}
-            window.console.log(val, old)
-            this.updTakeFromFront
-            return val},
-          deep:true
+    discardedTiles:{
+           deep: true,
+           handler(val)
+            {return val}
+        },
+     flowers:{
+          handler(val){
+            return val
+          }
      }
    },
+     updated() {
+       if(this.getTiles(this.self)){if(this.myTiles!==this.getTiles(this.self)){
+          console.log('changed mytiles')}}
+       if(this.getTiles(this.right)){if(this.rightTiles!==this.getTiles(this.right)){
+         console.log('changed righttiles')}}
+       if(this.getTiles(this.cross)){if(this.crossTiles!==this.getTiles(this.cross)){
+         console.log('changed crosstiles')}}
+       if(this.getTiles(this.left)){if(this.leftTiles!==this.getTiles(this.left)){
+         console.log('changed lefttiles')}}
+    },
    methods:{  
     ...mapActions(["setluckyNumber",
                    "startTiles",
                    "setPlayers",
                    'tileChosen',
-                   'updDiscardedTile',
+                  //  'updDiscardedTile',
                    'updTiles',
                    'updTakeFromFront',
                    'consisTiles',
@@ -518,75 +572,117 @@ export default {
        this.index=1//for guide instruction
        this.socket.emit("diceChange", data);
       },
-
+      // findMyVal:function(){
+      //  this.rightTiles=this.getTiles(this.right)
+      //  this.leftTiles=this.getTiles(this.left)
+      //  this.crossTiles=this.getTiles(this.cross)
+      // },
      selected: function(data){
        let selectedIndex=data;//index selected in seating.vue
        let a=this.seatsObject[selectedIndex];//find the seatname
        this.seats.splice(this.self, 1, a);//replace [seats]????
-       this.mySeat = a.replace(/B/, '').toUpperCase();
+       this.mySeat=a.replace(/B/, '').toUpperCase();
        this.users[this.self].mySeat=this.mySeat;
        this.seatsObject.splice(selectedIndex, 1);//del the tile
        this.seatObj.splice(selectedIndex, 1);//del the name
-       let payload = [this.seats, this.seatsObject, this.seatObj];
+       let payload=[this.seats, this.seatsObject, this.seatObj];
        window.console.log("selected","/",data)
        this.socket.emit('seatSelected', payload);//four times
        if(this.inTurn==='last'){
-         this.socket.emit('inTurn', 'start')}//start game
+         this.socket.emit('inTurn','start')}//start game
      },
 
      sortTiles: function(a){
           this.updMyTiles(["sorting", a])
           this.socket.emit('sort', a)
           },
-     
+
+     backward: function (chowCheck){
+       let checkTiles = this.getTiles(this.self)
+        checkTiles.forEach(e=>{
+       if(e.tileSort===chowCheck[0]-1){
+         chowCheck.unshift(e.tileSort)}
+         })
+         console.log(chowCheck)
+       return chowCheck
+          },
+      //payLoad=[myIdx, memory[0].tileIdx,[0].tile, [1].tileIdx, [1].tile]
      //payload=[myIndex, tile.id, preClickedMyIdx, preClickedtileId, tileSort]
-     casting: function(payload){
+     casting: function(payload){//myIdx, memory[0], memory[1]
           //relocation  payload[2]=tile.index, tile.currentposition
-          if(payload[3]!==payload[1]){//second click differs first --relocate
+         if(payload[1][0]!==payload[0][0]){//[1] click differs [0] --relocate
           this.updMyTiles(["relocate", this.self, 
-          payload[0], payload[1], payload[2],payload[3]]);//
+          payload[0][0], payload[1][1].id, payload[0][0],payload[0][1]]);//
           return                                
          }
-          //disTile
-          if(payload[1]===payload[3]){//second click same as first  --discard
-          if(payload[4]>329){this.updTakeFromFront, 
-          this.flowers=true, window.console.log(this.getFromFront)}//?????????????????????
+        
+          if(payload[1][0]===payload[0][0]){//second click same as first  --discard
+          if(payload[1][1].tileSort>319){this.updTakeFromFront(), 
+          this.flowers=true}else{this.flowers=false}//?????????????????????
           if(this.inTurn!==this.mySeat)
           {alert('not your turn'); return}
-          let data=["deserted", this.self, payload[1]]// payload[1]=tile.id 
-          this.updMyTiles(data)
-          this.socket.emit('disTile', [this.self, 
+          let data=["deserted", this.self, payload[1][1].id]// payload[1]=tile.id 
+          // window.console.log(this.getDisCardedTiles(this.self))//no use
+         this.updMyTiles(data)//time delay!!!!!!
+         
+          // this.$set(this.discardedTiles[this.self], this.getDisCardedTiles(this.self))
+          payload=[this.self, 
           this.getTiles(this.self),
           this.getTableTiles, 
-          this.getDisCardedTiles(this.self),
-          this.flowers])//????????????
-                          
-         
-         // {this.goAhead.fill(false)} //finished casting??? 
-         
+          this.getDisCardedTiles(),
+          this.flowers, payload[1][1]]
+          setTimeout(()=>{ this.socket.emit('disTile', payload )},3000);
+          // this.socket.emit('disTile', payload )
+
+          this.lastCasted=[payload[5], this.self]//tile
           this.memory='';
-           this.socket.emit('deserted', payload[4])
+          if(!this.flowers){
+          this.socket.emit('deserted', this.lastCasted)//needed or not?????
           return
           }
           // this.socket.emit('myTile', this.self)//info other stores of changes
-     },
+     }},
 
     //data = this.self, from viewDiscated dealing
      getTile: function(data){
-       if(this.getTiles(data).length===14){alert('too many'); return}
+       console.log(this.tilesCount[this.self], '/  tilesCount')
+       if(this.myTiles.length===this.tilesCount[this.self])
+       {alert('too many'); return}
        if(this.inTurn!==this.mySeat){alert('not your turn'); return}
        if(!this.goAhead||!this.disabled){return}
-       //let arg = [];
-      //  (this.tilesOnTableLength===91&&this.myRank==='first')
-      //  ?arg=[true, data]
-      //  :arg=[false, data]
-      // this.updPublicTiles1([false, data])//need be done later????????
-       this.disabled = true
+     
+       this.disabled=true
        data=["inserted", data]
        this.updMyTiles(data)
+       this.$set(this.myTiles, this.getTiles(this.self))
        data=[data[1], this.getTiles(data[1]), 
-       this.getTableTiles, this.getDisCardedTiles(data[1])]
+       this.getTableTiles, this.getDisCardedTiles()]//self????
        this.socket.emit('getTile', data)
+       this.lastCasted=[{url:'board'}, this.self]
+     },
+     /*peng, chow, kong, indexofDiscardedTile, 
+     tileId, this.self*/
+     pengChowKong: function(data){
+       console.log(data)
+       let payload=[data[4],data[5],data[6]]
+       this.disabled=false//just added????????????????
+       if(data[0]){
+         payload.unshift('hula')
+       }else if(data[1]){
+          payload.unshift('peng')
+       }else if(data[2]){
+          payload.unshift('chow')
+       }else if(data[3]){
+          payload.unshift('kong')
+       }
+       this.socket.emit('pengChowKong', payload)
+     },
+     updateCasted:function(){
+        this.lastCasted=[{url:'board'}, this.self]
+        this.socket.emit('updateCasted')
+     },
+     updTilesCount:function(){
+       this.tilesCount[this.self]++
      },
     
     consisPlayers:function(index){
@@ -630,20 +726,10 @@ export default {
       this.pagePosition(user.index);
       this.socket.emit("newuser",user);
     },
-    hula:function(){
-  //     let array=[{typeSort:122},{typeSort:123},{typeSort:124},
-  //  {typeSort:103},{typeSort:104},{typeSort:105},{typeSort:108},
-  //  {typeSort:108},{typeSort:108},{typeSort:128},{typeSort:128},
-  //  {typeSort:128},{typeSort:122},{typeSort:122}]
-   let array=this.myTiles.map(e=>e.tileSort)
-   let a
-   window.console.log(a=findChowHand(array))
-   //if true broadcast needed
-   window.console.log(findPong(array))
-  
-      window.console.log(grouping(a)+""+"Hula!")
-    // window.console.log(grouping(array))
+    hula:function(data){
+      this.socket.emit("mahjiong", data)
     },
+ 
     
      //from dicing $emit when finished
     diced:function(data){
@@ -668,22 +754,22 @@ export default {
       this.dices = a2;
     },
 
-    findMyRank: function(rank) {
-      switch (rank) {
-        case 0:
-          this.myRank = "first";
-          break;
-        case 1:
-          this.myRank = "second";
-          break;
-        case 2:
-          this.myRank = "third";
-          break;
-        case 3:
-          this.myRank = "last";
-      }
-      return this.myRank;
-    },
+    // findMyRank: function(rank) {
+    //   switch (rank) {
+    //     case 0:
+    //       this.myRank = "first";
+    //       break;
+    //     case 1:
+    //       this.myRank = "second";
+    //       break;
+    //     case 2:
+    //       this.myRank = "third";
+    //       break;
+    //     case 3:
+    //       this.myRank = "last";
+    //   }
+    //   return this.myRank;
+    // },
 
     award:function(rank){
       let a=['first','second','third','last'];
@@ -694,7 +780,7 @@ export default {
     },//rank[0].a=player's index, .t=number diced, .n="first"
     
     //t: tileSort of discarded
-    tileScaner: function  (tile, t){
+    tileScaner: function (tile, t){
     tile = tile.sort((a, b)=>(a.tileSort - b.tileSort))
     //let x = tile.length; 
     let peng = [];
@@ -773,19 +859,13 @@ export default {
   justify-self: center;
   align-self: start;
   z-index: 1;
-  /* height: 100vh;
-         width: 10vh; */
-  /* to limit the size can also defined in other div. */
 }
 .right {
   display:flex;
   flex-flow: column;
   grid-area: right;
-  /* justify-self: start; */
   align-self: start;
   z-index: 1;
-  /* height: 100vh;
-           width: 10vh; */
 }
 .center {
   display:flex;
@@ -793,37 +873,38 @@ export default {
   grid-area: center;
   justify-self: center;
   align-self: start;
-  /* align-items: stretch; */
 }
 .self {
   grid-area: self;
+  display: flex;
   justify-self: center;
   align-self: start;
 }
 
  .container {
   display: grid;
-  font-size: 1.5rem;
-  grid-template-columns:  1fr ;
-  grid-template-rows: 1fr;
+  /* font-size: 1.5rem; */
+  /* place-content: center; */
+  /* grid-template-columns:  1fr ;
+  grid-template-rows: 1fr; */
   grid-template-areas:
     "left cross right"
+    /* "left center right" */
     "left center right"
-    "left center right"
-    "left self right"
+    /* "left self right" */
     "left self right";
-  /* background-color: rgba(rgb(243, 171, 171), rgb(239, 245, 239), rgb(212, 212, 231), 0.4); */
+  background-color: rgba(rgb(243, 171, 171), rgb(239, 245, 239), rgb(212, 212, 231), 0.4);
 }
 
 @media screen and (max-width: 400px) {
   .container {
-    grid-template-columns: 40px 1fr 40px;
-    grid-template-rows: 1fr 1fr 1fr;
-    grid-template-areas:
+    grid-template-columns: auto 1fr auto;
+    /* grid-template-rows: 1fr 1fr 1fr; */
+    /* grid-template-areas:
       "cross cross cross"
       ".center."
       "left center right"
-      "self self self";
+      "left self right"; */
   }
 }
 </style>
