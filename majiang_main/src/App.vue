@@ -123,9 +123,10 @@ export default {
     Seating,
     // videoChat
   },
+  //--port 8081 --host 0.0.0.0 --host localhost",  //added to packagejsn
   data() {
     return {
-      socket: io("http://192.168.1.128:3000"),//localhost could not be accesed by other divices
+      socket: io("http://192.168.1.64:3000"),//localhost could not be accesed by other divices
       name: "John",
       users: [],
       tilesCount:new Array(4).fill(14),
@@ -271,7 +272,6 @@ export default {
          this.socket.emit('ranked', 
          [this.users[this.self], this.self])
     })//alldiced  
-        
         this.socket.on('rankedUsers',data=>{//good here???
            this.users=data
            //seatTaken is false
@@ -413,16 +413,16 @@ export default {
        chowCheck.length>2&&justified
        ?(this.chowAllowed=true, console.log('chow ready', chowCheck))
        :this.chowAllowed=false
-
+ //=================================================================keep
       //  if(chowCheck.length>2){
-      //    let tile=this.getTiles(this.self)
+      //    let tile=this.getTiles(this.self)   
       //    tile.push(tileCastedNow[0])
       //    this.$refs.ViewDiscarded.seeIfHula(tile );
       //    console.log('/cannot debugger!?')
       //    }
          // debugger????????????????????????
     })//else check if Hula!!!!!!!!!!!!!!!!!!!!!
-    //============check chow or peng===============================
+//============check chow or peng===============================
 
    // data=[this.self, this.getTiles(this.self),
         //  this.getTableTiles, this.getDisCardedTiles(this.self), flowers])
@@ -432,7 +432,8 @@ export default {
        this.consisTiles([data[0],data[1],data[2],data[3]])
       //  this.$set(this.discardedTiles, this.getDisCardedTiles())
        if(!data[4]){
-         let x=this.getTiles(this.self)
+         let x=this.getTiles(this.self)//why???????????????
+         console.log(x, ' / tilesCount', this.tilesCount)
          if(x.length===this.tilesCount[this.self]){alert("you not done yet!"); return}
        let a=['SOUTH', 'WEST', 'NORTH', 'EAST', 'SOUTH'];
        let i=a.findIndex(e=>e===this.inTurn);//find the first match
@@ -549,12 +550,12 @@ export default {
      updated() {
        if(this.getTiles(this.self)){if(this.myTiles!==this.getTiles(this.self)){
           console.log('changed mytiles')}}
-       if(this.getTiles(this.right)){if(this.rightTiles!==this.getTiles(this.right)){
-         console.log('changed righttiles')}}
-       if(this.getTiles(this.cross)){if(this.crossTiles!==this.getTiles(this.cross)){
-         console.log('changed crosstiles')}}
-       if(this.getTiles(this.left)){if(this.leftTiles!==this.getTiles(this.left)){
-         console.log('changed lefttiles')}}
+       if(this.getTiles(this.right)){if(!this.getTiles(this.right)){
+         console.log('undefined righttiles')}}
+       if(this.getTiles(this.cross)){if(!this.getTiles(this.cross)){
+         console.log('undefined crosstiles')}}
+       if(this.getTiles(this.left)){if(!this.getTiles(this.left)){
+         console.log('undefined lefttiles')}}
     },
    methods:{  
     ...mapActions(["setluckyNumber",

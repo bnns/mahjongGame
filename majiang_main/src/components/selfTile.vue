@@ -23,7 +23,7 @@ export default {
     myTiles: {
       type: Array,
       default: function() {
-        return [{ url: "facai" }];
+        return [{ url: "east_wind" }];
       },
       required: false,
     },
@@ -35,16 +35,32 @@ export default {
       seat: "",
       firstPlayer: false,
       counter: 0,
+      taken:"item1",
+      chowArray:null,
+      pengArray:null,
+      kongArray:null,
+      tiles:null,
+      rest:this.myTiles,
     };
   },
-  watch: {
-    myTiles: {
-      handler(val) {
-        return val;
-      },
-      deep: true,
-    },
+  updated (){
+    if(this.myTiles){
+      this.tiles=this.myTiles}
   },
+  //   this.chowArray=[],this.pengArray=[],this.kongArray=[],this.rest=[]
+  //     if(!this.myTiles){return}
+  //       this.myTiles.map(e => {
+  //         e.chiPenGan===1
+  //         ?this.chowArray.push(e)
+  //         :e.chiPenGan===2
+  //         ?this.pengArray.push(e)
+  //         :e.chiPenGan===3
+  //         ?this.kongArray.push(e)
+  //         :this.rest.push(e)
+  //       });
+  //       let a=[this.chowArray, this.pengArray, this.kongArray, this.rest]
+  //       this.tiles=a.filter(e=>e.length!==0)
+  // },
   methods: {
     ...mapActions(["updMyTiles"]),
     action(myIndex, tile) {
@@ -71,13 +87,16 @@ export default {
 </script>
 <template>
   <div id="selfTiles">
-    <div class="tiles" v-for="(tile, index) in myTiles" :key="index">
+     <div class="tiles" v-for="(tile, index) in tiles" 
+       :key="index">
       <img
         class="float"
-        :class="{ active: clicked === index }"
+        :class = "{ active: clicked === index,
+         'taken': tile.chiPenGan !==0,
+          'fallDown': tile.chosen}"
         :src="require(`../assets/${tile.url}.png`)"
         :alt="tile.url"
-        @click="action(index, tile)"
+        @click="tile.chiPenGan==0?action(index, tile):''"
       />
     </div>
     <button class="sorting" @click="sorting()">
@@ -142,7 +161,16 @@ button:hover {
   transform: rotate(10deg);
   box-shadow: 4px 4px 10px rgba(200, 200, 200, 0.7);
 }
-
+.taken{
+   border: 3px solid darkcyan;
+   filter: brightness(80%);
+}
+.taken::after{
+  content: "peng";
+}
+.fallDown{
+  transform:rotate(90deg)
+}
 @media screen and (max-width: 400px) {
   img {
     height: 10vh;

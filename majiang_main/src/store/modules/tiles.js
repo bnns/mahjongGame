@@ -91,20 +91,36 @@ const mutations={
     }
     else if(arg[0]==="peng"||arg[0]==="chow"||arg[0]==="kong"){//[1]=index,[2]=tileId,[3]=self
       window.console.log(arg)
-      let a
-      state.discardedTiles[arg[1]].map((e, i)=>{
-     if(e.id===arg[2]){
-      a=state.discardedTiles[arg[1]].slice(i,i+1),
-      window.console.log(a[0])
-      state.discardedTiles[arg[1]].splice(i,1)//?????????????
-      }})
-      console.log(state.tilesOnHands[arg[3]], '//arg[3]//', arg[3])
-    state.tilesOnHands[arg[3]].push(a[0])
-    state.tilesOnHands[arg[3]].forEach(e=>{
-      if(a[0].tileSort===e.tileSort){e.chiPenGan=(arg[0]==="chow")
-      ?1:(arg[0]==='peng')?2:(arg[0]==='kong')?3:""}
-    })
-    }
+      let index
+      let array=state.discardedTiles[arg[1]]
+      state.discardedTiles[arg[1]]
+      .forEach((e, i)=>{e.id==arg[2]
+      ?(index=i, (e.chosen=true, e.chiPenGan=(arg[0]==="chow")
+      ?1:(arg[0]==='peng')
+      ?2:(arg[0]==='kong')
+      ?3:""))
+      :'', console.log(e.id===arg[2], e.tileSort)})
+      
+      console.log(array[index])
+      state.tilesOnHands[arg[3]].push(array[index])
+      state.discardedTiles[arg[1]].splice(index,1)
+  // console.log(array[index], ' / e.id', array[index].id)
+
+      // array.forEach(e=>e.id===arg[2]
+      // ?(a[0].chosen=true, a[0].chiPenGan=(arg[0]==="chow")
+      // ?1:(arg[0]==='peng')
+      // ?2:(arg[0]==='kong')
+      // ?3:"")
+      // :'')
+      // state.discardedTiles[arg[1]].splice(index,1)
+      // console.log(state.tilesOnHands[arg[3]], '//arg[3]//', a[0])
+  //  state.tilesOnHands[arg[3]].push(array[index])
+      }
+    // state.tilesOnHands[arg[3]].forEach(e=>{
+    //   if(a[0].tileSort===e.tileSort){e.chiPenGan=(arg[0]==="chow")
+    //   ?1:(arg[0]==='peng')?2:(arg[0]==='kong')?3:""}
+    // })
+
     // else if(arg[0]==="chow"){
     //   window.console.log(arg)
     // }

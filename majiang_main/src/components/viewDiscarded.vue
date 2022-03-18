@@ -2,6 +2,8 @@
   <div class="container" refs="container">
     <div  :class="{blink:(chowAllowed||pengAllowed)&&blink}"
     class="lastCasted"
+    @mouseover="chiPonKon2()"
+    @mouseout="chiPonKon3()"
     @click="chiPonKon()">
         <img
           :src="require(`../assets/${lastCasted[0].url}.png`)"
@@ -42,7 +44,7 @@
       <div class="self-b" v-show="castedShow">
         <img
           v-for="(tile, index) in discardedTiles[self]
-          .slice(0)"
+          .slice(tilesShown)"
           :key="index"
           :src="require(`../assets/${tile.url}.png`)"
           :alt='tile.url'
@@ -65,7 +67,7 @@
       <div class="right-b" v-show="castedShow">
         <img
           v-for="(tile, index) in discardedTiles[right]
-          .slice(-5)"
+          .slice(tilesShown)"
           :key="index"
           :src="require(`../assets/${tile.url}.png`)"
           :alt="`${tile.url}`"
@@ -81,7 +83,7 @@
       <div class="cross-b" v-show="castedShow">
         <img
           v-for="(tile, index) in discardedTiles[cross]
-          .slice(-5)"
+          .slice(tilesShown)"
           :key="index"
           :src="require(`../assets/${tile.url}.png`)"
           :alt="`${tile.url}`"
@@ -101,7 +103,7 @@
       <div class="left-b" v-show="castedShow">
         <img
           v-for="(tile, index) in discardedTiles[left]
-          .slice(-5)"
+          .slice(tilesShown)"
           :key="index"
           :src="require(`../assets/${tile.url}.png`)"
           :alt="`${tile.url}`"
@@ -147,7 +149,8 @@ export default {
       show: false,
       chowOption: false,
       msg: "",
-      castedShow:false,
+      castedShow:true,
+      tilesShown:-5,
       blink:false,
       peng: false,
       chow: false,
@@ -203,9 +206,9 @@ export default {
    
     mahjiong: {
       handler(val) {
-       alert("Hula");
         if (val) {
           (this.show = true),
+          (this.castedShow = false),
             (this.chowChain = val),
             (this.mahjiongB = true),
             (this.chowOption = true);
@@ -309,8 +312,12 @@ export default {
     checkYes: function() {
       this.show = false;
       if (this.msg === "Peng") {
-        (this.chow = this.kong = this.mahjiongB = false);
-      }
+            this.chow = this.kong = this.mahjiongB = false;
+            let counter=0
+            this.myTiles.forEach(e=>{if(counter==3){return}
+            e.tileSort===this.lastCasted[0].tileSort?(e.chiPenGan=2,
+            counter++):''})
+            }
       if (this.msg === "Kong") {
         (this.chow = false), (this.peng = false), (this.mahjiongB = false);
         this.$emit('updTilesCount')
@@ -321,13 +328,13 @@ export default {
       if (this.msg === "Hula") {
         (this.chow = false), (this.kong = false), (this.peng = false);
       }
-      if(this.chowChain.length>2){
+      if(this.chowChain.length>2&&this.chow){
         console.log(this.chowChain)
         this.chowChain.find((e, i, array)=>e===this.lastCasted[0].tileSort
         ?array.splice(i, 1):'')
         
       }
-      if(this.chowChain.length===2){
+      if(this.chowChain.length===2&&this.chow){
          let copy=this.chowChain.slice()
         this.myTiles.find((e)=>
         copy.forEach((ele, i, array)=>ele===e.tileSort
@@ -342,6 +349,7 @@ export default {
       {
         tempTile=[...this.lastCasted[0], this.myTiles]
       }else{tempTile=this.myTiles}
+        console.log(tempTile, ' / hula hands!')
         this.$emit("hula", tempTile);//???????????????????????
       }
       if (this.go) {
@@ -372,18 +380,18 @@ export default {
     checkNo: function() {
       this.show = false;
      this.$refs.checkbox.checked = false
-      window.console.log(this.msg !== "Peng" && this.peng);
-      if (this.peng && this.msg !== "Peng") {
+      console.log(this.msg !== "Peng" && this.peng);
+      if (this.msg !== "Peng"&&this.peng) {
         (this.msg = "Peng"), (this.show = true);
         return;
       }
 
-      if (this.msg !== "Chow" && this.Chow) {
+      if (this.msg !== "Chow"&&this.chow) {
         (this.msg = "Chow"), (this.show = true);
         return;
       }
 
-      if (this.msg !== "Kong" && this.kong) {
+      if (this.msg !== "Kong"&&this.kong) {
         (this.msg = "Kong"), (this.show = true);
         return;
       }
@@ -440,10 +448,17 @@ export default {
       this.castedShow=!this.castedShow
       return
     },
+    chiPonKon2:function(){
+      this.tilesShown=0
+    },
+    chiPonKon3:function(){
+      this.tilesShown=-3//show discarded Tiles in brouser
+    },
 
     hula: function(head, arg1, arg2, arg3) {
-      window.console.log(head, arg1, arg2, arg3);
+      window.console.log(head, arg1.length===this.tilesCount[this.self]-1, arg2, arg3);
       if (head === "Hula") {
+        if(arg1.length===this.tilesCount[this.self]-1){this.arg1.push(this.lastCasted[0])}
         let tiles= arg1.map((e) =>{return {tileSort:e.tileSort}});
         //tiles.forEach(e=>tiles.tileSort=e.tileSort)
         // tiles=Array.from(tiles);
@@ -627,35 +642,9 @@ for(let i=0; i<leftOver[0].length; i++){
              if(e.id===ele.id){e.chiPenGan=1}
             })   
       }     
-    // chowSelected(chowItem) {
-    //   this.payload.push(chowItem)
-    //   if(this.payload.length===2){this.chowChain=[], 
-    //   this.chowOption=false
-    //   }
-    //   window.console.log(' / chowItem', chowItem);
-    //   this.myTiles.find(makeChow)
-    //   function makeChow(e){
-    //     if(e.tileSort===chowItem.tileSort){e.chiPenGan=1}
-    //   }
-    //   // this.$emit("pengChowKong", this.payload )
-    // },
-      //  function chowIt(e){
-      //      this.chowChain.map(ele=>ele.id===e.id?e.chiPenGan=1:'')
-      //   }
-
-    // handleData(itemSelected) {
-    //   this.chowOption = false;
-    //   window.console.log(itemSelected);
-    // },
+ 
   }, //methods
 };
-//====================================================
-// let chow = findChowHand(bigFourWinds)
-
-// window.console.log(findPong(bigFourWinds)," pong")
-// //let peng = findPong(bigTriDragon)
-// window.console.log(grouping(chow), " chow&&pongs")
-//=====================================================
 </script>
 <style scoped>
 * {
@@ -670,6 +659,7 @@ img {
 
 .container {
   display: grid;
+  display:-webkit-grid;
   grid-template-columns: repeat(16, 1fr);
   grid-template-rows: repeat(16, 1fr);
   height: 70vh;
@@ -681,10 +671,12 @@ img {
 }
 .lastCasted{
   display:grid;
+  display:-webkit-grid;
+   display: -moz-grid;
   place-self: center;
   align-items: center;
   position:absolute;
-  font-size: 4rem;
+  /* font-size: 4rem; */
   cursor: pointer;
   /* height:10vh;
   width: 10vw; */
@@ -836,7 +828,7 @@ img {
   font-weight: 600;
   height: 20vh;
   width: 20vh;
-  animation: mymove1 6s infinite;
+  animation: mymove1 1s infinite;
   background: conic-gradient(
     from 195deg,
     white,
@@ -973,14 +965,7 @@ section img{
   background: black;
   margin: 2px;
 }
-/* .chowOp{
-  /* position:absolute; */
-/* height:50%;
-  width:50%;
-  color: red; */
-/* background-image: url("../assets/facai.png"); */
-/* z-index: 9999; */
-/* } */
+
 .inturn {
   animation: mymove 4s infinite;
 }
@@ -1006,41 +991,65 @@ section img{
     height: 7.5vh;
     box-shadow: 2px 1px 4px darkgreen;
   }
+  .lastCasted{
+  display:grid;
+  display:-webkit-grid;
+  place-self: center;
+  align-items: center;
+  position:absolute;
+  cursor: pointer;
+  /* height:10vh;
+  width: 10vw; */
+  aspect-ratio: 1 / 1; 
+  border: none;
+  padding: 15px;
+  background: radial-gradient(
+    circle,
+    rgb(252, 180, 180) 0%,
+    rgb(185, 9, 9) 70%,
+    rgb(198, 4, 9) 28%,
+    rgb(32, 3, 2) 100%
+  );
+  border-radius: 50%;
+  z-index: 9;
 }
-/* @media screen and (max-width: 401px) { */
-/* .container{ */
-/* display: grid; */
-/* height: auto; */
-/* width: 70vw; */
-/* align-self: center; */
-/* justify-self: center; */
-/* } */
-/* img { */
-/* height: 6vh; */
-/* } */
-/* } */
-@media screen and (min-width: 400px) {
-  .container {
+}
+
+@media only screen and (min-device-width: 768px) and (max-device-width: 1024px) and (-webkit-min-device-pixel-ratio: 2)
+ { .container {
     display: grid;
+    display: -moz-grid;
     place-content: center;
     /* min-height: 63vh;
-     width: 70vw;
+     width: 70vw;*/
      align-self: center;
-     justify-self: center; */
+     justify-self: center; 
   }
   img {
     height: 7vh;
   }
+  .lastCasted{
+  display:grid;
+  place-self: center;
+  /* align-items: center; */
+  position:absolute;
+  font-size: 4rem;
+  cursor: pointer;
+  /* height:10vh;
+  width: 10vw; */
+  aspect-ratio: 1 / 1; 
+  border: none;
+  padding: 15px;
+  background: radial-gradient(
+    circle,
+    rgb(252, 180, 180) 0%,
+    rgb(185, 9, 9) 70%,
+    rgb(198, 4, 9) 28%,
+    rgb(32, 3, 2) 100%
+  );
+  border-radius: 50%;
+  z-index: 9;
 }
-/*  class='chowOp'
-                  v-for="(chowItem,i) of chowChain"
-                  :key="i"
-   <img 
-                       :src="require(`../assets/${chowItem.url}.png`)"
-                       :alt="`${tile.url}`"
-                  @change="
-                    selected=chowItem;
-                    chowOption=false;
-                    chowSelected(chowItem, i);"
-                    > */
+}
+
 </style>
