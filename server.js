@@ -169,25 +169,25 @@ let temp = new Array(4);
   }),
  
     //seat selected
-    socket.on('ready',data=>{
+    socket.on('ready',data=>{//[0]=user, [1]=index
      temp[data[1]]=data[0];//rearange the users by seats
      seat++;
      if (seat===4){
        let data=[...temp]
        users=data//consis users with vuex state
        seat=0
-       let tileWalls=tilesMade(data, tiles);
+       let tileWalls=tilesMade(data, tiles)//set up tiles
        io.emit('ready1', [{onHands:tileWalls[0], 
         onTable:tileWalls[1],
         allTiles:tiles},
-        data]) 
+        users]) 
        temp=new Array(4)
      }
     });
 
     socket.on('start', data=>
          socket.broadcast.emit('start1', data))
-
+    
        socket.on('sort',a=>{
         socket.broadcast.emit('sort1',a)
       }),
@@ -219,9 +219,34 @@ let temp = new Array(4);
        })
        socket.on('updateCasted', ()=>
        socket.broadcast.emit('updateCasted1'))
+
        socket.on('mahjiong', data=>{
-         io.emit('mahjiong1', data)
+        io.emit('mahjiong1', data)
+        tiles=getTiles();
+       
+        let shuffled=[];
+        while(tiles.length>0){
+            let k=getRandomizer(0, tiles.length-1);
+            shuffled.push(tiles[k])
+            tiles.splice(k, 1)
+        }
+        tiles=randomTiles(shuffled);
+
+        // io.emit('mahjiong1', data)
        })
+       //====================================================
+       socket.on('restart', data=>//[0]=players, [1]=?, [2]=?
+      { users=data[0]
+        let a=tilesMade(users, tiles)
+        tileWalls=Object.values(a)
+  
+        io.emit('restart1', [{onHands:tileWalls[0], 
+                 onTable:tileWalls[1], allTiles:tiles},
+                 users, data[1], data[2]])
+      })
+
+       //payload[0]=tiles, [1]=users, [2]=goAhead, [3]=inturn          
+       //====================================================
        //io.on deffer from socket.on!!!!
        socket.on("disconnect",()=>{
          let itemIdx,  roomleft, 

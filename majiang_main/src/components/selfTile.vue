@@ -36,33 +36,35 @@ export default {
       firstPlayer: false,
       counter: 0,
       taken:"item1",
-      chowArray:null,
-      pengArray:null,
-      kongArray:null,
-      tiles:null,
-      rest:this.myTiles,
     };
   },
-  updated (){
-    if(this.myTiles){
-      this.tiles=this.myTiles}
+  computed: {
+     chowArray: {
+       get(){return this.arrayGet(1)
+       }
+     },
+     pengArray: {
+        get(){return this.arrayGet(2)}
+     }, 
+     kongArray: {
+       get(){return this.arrayGet(3)}
+     },
+     tiles: {
+       get(){return this.arrayGet(0)}
+            }
+     
   },
-  //   this.chowArray=[],this.pengArray=[],this.kongArray=[],this.rest=[]
-  //     if(!this.myTiles){return}
-  //       this.myTiles.map(e => {
-  //         e.chiPenGan===1
-  //         ?this.chowArray.push(e)
-  //         :e.chiPenGan===2
-  //         ?this.pengArray.push(e)
-  //         :e.chiPenGan===3
-  //         ?this.kongArray.push(e)
-  //         :this.rest.push(e)
-  //       });
-  //       let a=[this.chowArray, this.pengArray, this.kongArray, this.rest]
-  //       this.tiles=a.filter(e=>e.length!==0)
-  // },
   methods: {
     ...mapActions(["updMyTiles"]),
+    arrayGet(arg){
+         if(!this.myTiles){return null}
+         let a=[]
+          this.myTiles.map(e => {
+          e.chiPenGan===arg
+          ?a.push(e):''
+        })
+        return a
+    },
     action(myIndex, tile) {
       this.clicked=[myIndex, tile]
       if (!this.memory) {
@@ -87,17 +89,46 @@ export default {
 </script>
 <template>
   <div id="selfTiles">
-     <div class="tiles" v-for="(tile, index) in tiles" 
-       :key="index">
+     <div class="tiles" v-for="tile in chowArray" 
+       :key="tile.id" v-show='tile!==null'>
       <img
         class="float"
-        :class = "{ active: clicked === index,
+        :class = "{
+         'taken': tile.chiPenGan !==0,
+          'fallDown': tile.chosen}"
+        :src="require(`../assets/${tile.url}.png`)"
+        :alt="tile.url"/>
+    </div>
+     <div class="tiles" v-for="tile in pengArray" 
+       :key="tile.id" v-show='tile!==null'>
+      <img
+        class="float"
+        :class = "{
+         'taken': tile.chiPenGan !==0,
+          'fallDown': tile.chosen}"
+        :src="require(`../assets/${tile.url}.png`)"
+        :alt="tile.url"/>
+    </div>
+     <div class="tiles" v-for="tile in kongArray" 
+       :key="tile.id" v-show='tile!==null'>
+     <img
+        class="float"
+        :class = "{
+         'taken': tile.chiPenGan !==0,
+          'fallDown': tile.chosen}"
+        :src="require(`../assets/${tile.url}.png`)"
+        :alt="tile.url"/>
+     </div>
+     <div class="tiles" v-for="(tile, index) in tiles" 
+       :key="tile.id">
+      <img
+        class="float"
+        :class = "{ active: clicked === tile.id,
          'taken': tile.chiPenGan !==0,
           'fallDown': tile.chosen}"
         :src="require(`../assets/${tile.url}.png`)"
         :alt="tile.url"
-        @click="tile.chiPenGan==0?action(index, tile):''"
-      />
+        @click="tile.chiPenGan===0?action(index, tile):''"/>
     </div>
     <button class="sorting" @click="sorting()">
       <p class="tileTotal">{{ myTiles.length }}</p>
@@ -162,8 +193,11 @@ button:hover {
   box-shadow: 4px 4px 10px rgba(200, 200, 200, 0.7);
 }
 .taken{
-   border: 3px solid darkcyan;
-   filter: brightness(80%);
+  display:grid;
+   border: 3px solid rgb(29, 158, 83);
+   filter: brightness(90%);
+  grid-row-start: 1;
+  grid-row-end: 3;
 }
 .taken::after{
   content: "peng";

@@ -23,6 +23,7 @@
       </div>
        <h3>{{this.diceTotal[self]}}</h3>
        <div class="name">{{users[self].name}}</div>
+        <h3 class='keep_dicing' v-if="!disabled">{{'keep dicing...!'}}</h3>
     </div>
     <div class="-right">
       <div>
@@ -246,6 +247,10 @@ h3{
   width:2rem; */
   /* background-size: 2rem; */
   background-color: lightblue;
+}
+.keep_dicing{
+  background-color:gray;
+  color:yellow;
 }
 .-self.name{
   right:1px;

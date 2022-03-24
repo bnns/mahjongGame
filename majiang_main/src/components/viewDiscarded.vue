@@ -1,21 +1,21 @@
 <template>
   <div class="container" refs="container">
     <div  :class="{blink:(chowAllowed||pengAllowed)&&blink}"
-    class="lastCasted"
-    @mouseover="chiPonKon2()"
-    @mouseout="chiPonKon3()"
-    @click="chiPonKon()">
-        <img
-          :src="require(`../assets/${lastCasted[0].url}.png`)"
-          :alt="`${lastCasted[0].url}`"
-          v-show="!castedShow"
-        />
+          class="lastCasted center"
+          @mouseover="chiPonKon2()"
+          @mouseout="chiPonKon3()"
+          @click="chiPonKon()">
+          <img
+            :src="require(`../assets/${lastCasted[0].url}.png`)"
+            :alt="`${lastCasted[0].url}`"
+            v-show="!castedShow||castedShow2"
+          />
     </div>
+
     <div
       class="pengChowKong center"
-      v-if="`${peng || chow || kong || mahjiongB}` && show"
-    >
-      <input type="checkbox" @change="this.checkYes" />
+      v-if="`${peng || chow || kong }` && show && !restartB">
+      <input ref='checkbox' type="checkbox" @change="this.checkYes" />
       {{ msg + " ?" }}
       <input ref="checkbox" type="checkbox" @change="this.checkNo" />
     </div>
@@ -25,17 +25,35 @@
              :class="{ selectHide: chowOption }"
              v-for="(chowItem, index) of chowChain"
              :key="index"
-             multiple="multiple"
-           >
+             multiple="multiple">
                <img
                  :src="require(`../assets/${chowItem.url}.png`)"
                  :alt="`${chowItem.url}`"
                  @click="chowSelected(index)"
                />
           </section>
-      <!-- <button class="btn" type="submit" @click="handleData(chowItem)"
-      >X</button> -->
     </div>
+    <!-- ======================================================== -->
+    <div
+      class="center restart" :msg='msg' @click="restart(msg)"
+      v-if=" restartB "><p class="msg">{{msg}}</p>
+      <input class="restart" type="button" />
+    </div>
+
+    <div class="section center" v-if="restartB">
+           <section
+             :class="{ selectHide: restartB }"
+             v-for="(item, index) of showChain"
+             :key="index"
+             multiple="multiple">
+
+               <img
+                 :src="require(`../assets/${item.url}.png`)"
+                 :alt="`${item.url}`"
+               />
+          </section>
+    </div>
+
     <div class="_self">
       <a class="tile-back-tail" @click="$emit('getTile', self)">
         <img src="../assets/back_m.png" alt="image lost" />
@@ -48,7 +66,7 @@
           :key="index"
           :src="require(`../assets/${tile.url}.png`)"
           :alt='tile.url'
-          v-on:click="tileClicked(self, tile.tileSort, tile.id)"
+          v-on:click="tileClicked(self, tile.tileSort, tile.id, tile)"
         />
       </div>
       <button
@@ -71,7 +89,7 @@
           :key="index"
           :src="require(`../assets/${tile.url}.png`)"
           :alt="`${tile.url}`"
-          @click="tileClicked(right, tile.tileSort, tile.id)"
+          @click="tileClicked(right, tile.tileSort, tile.id, tile)"
         />
       </div>
       <h3 class="nameR color" :class="goAhead[right] && myTurn">
@@ -87,7 +105,7 @@
           :key="index"
           :src="require(`../assets/${tile.url}.png`)"
           :alt="`${tile.url}`"
-          v-on:click="tileClicked(cross, tile.tileSort, tile.id)"
+          v-on:click="tileClicked(cross, tile.tileSort, tile.id, tile)"
         />
       </div>
       <h3 class="nameC color" :class="goAhead[cross] && myTurn">
@@ -102,12 +120,12 @@
       </a>
       <div class="left-b" v-show="castedShow">
         <img
-          v-for="(tile, index) in discardedTiles[left]
-          .slice(tilesShown)"
+          v-for="(tile, index) in discardedTiles[left]?discardedTiles[left]
+          .slice(tilesShown):[{url:'board'}]"
           :key="index"
           :src="require(`../assets/${tile.url}.png`)"
           :alt="`${tile.url}`"
-          v-on:click="tileClicked(left, tile.tileSort, tile.id)"
+          v-on:click="tileClicked(left, tile.tileSort, tile.id, tile)"
         />
       </div>
       <h3 class="nameL color" :class="goAhead[left] && myTurn">
@@ -126,7 +144,8 @@ export default {
   name: "ViewDiscarded",
   props: [
     "lastCasted",
-    "mahjiong",
+    "iWon",
+    'restartFlag',
     "myTiles",
     "self",
     "right",
@@ -144,18 +163,22 @@ export default {
   data() {
     return {
       payload: null,
-      chowChain: [],
+      chowChain: [{url:''}],
+      showChain:[{url:''}],
       go: false,
       show: false,
       chowOption: false,
       msg: "",
-      castedShow:true,
-      tilesShown:-5,
+      castedShow:false,
+      castedShow2:false,
+      tilesShown:0,
       blink:false,
       peng: false,
       chow: false,
       kong: false,
       mahjiongB: false,
+      restartB:false,
+      isRestart:this.restartFlag,
       myTurn: "inturn",
     };
   },
@@ -189,6 +212,7 @@ export default {
     pengAllowed:{
       handler(val) {
          if(val){this.blink=true}
+         console.log(val, 'pengAllowed watch')
         return val;
       },
     },
@@ -204,22 +228,29 @@ export default {
       deep: true,
     },
    
-    mahjiong: {
+    iWon: {
       handler(val) {
         if (val) {
-          (this.show = true),
-          (this.castedShow = false),
-            (this.chowChain = val),
-            (this.mahjiongB = true),
-            (this.chowOption = true);
-        }
-        return
-      },
+            this.show = true,
+            this.castedShow = this.peng
+            =this.chow=this.kong
+            =this.mahjiongB = false,
+            this.msg = `${this.users[val[1]].name}`+' WON',
+            this.showChain = val[0],
+            this.restartB = true
+        }else{this.restartB=this.castedShow2=this.show=false}
+      }
     },
+     isRestart(val) {
+        if(val){
+          this.restart()
+        }
+    } 
   },
+
   methods: {
     // action(a){this.getPublicTiles(a)},
-    tileClicked(areaIdx, tileSort, tileId) {
+    tileClicked(areaIdx, tileSort, tileId, tile) {
       console.log(this.chowChain, 'chowChain/', tileId)
       //b:area.index, c:tileSort, d:tileId
       //  window.console.log(areaIdx,' / ',tileSort,' / ',tileId, '/',this.self)
@@ -229,23 +260,23 @@ export default {
         alert("not last one!");
         return;
       }
-
+       if(!this.goAhead){this.hula('Hula', this.myTiles)}//????????????
       if (!this.mahjiongB) {
-        let peng = [tileSort],
+        let peng = [tileSort],//tile.tileSort
             chow = [tileSort];
         this.getTiles(this.self).forEach((ele) => {
           let a = this.self - 1 < 0 ? 3 : this.self - 1;
           if (areaIdx !== this.self) {
-            ele.tileSort === peng[0] ? peng.push(peng[0]) : "";
+            ele.chiPenGan===0&&ele.tileSort === peng[0] 
+            ? peng.push(peng[0]) : "";
           }
           if (areaIdx === a && tileSort < 210) {
             let counter = 0;
-            ele.tileSort === chow[0] - 1 //??????????????????????
+            ele.chiPenGan===0&&ele.tileSort === chow[0] - 1 
               ? (chow = this.backward(chow, this.getTiles(this.self)))
               : ele.tileSort === chow[chow.length - 1] + 1 && counter < 2 //2 times at most
               ? (chow.push(ele.tileSort), counter++)
               : "";
-//console.log(peng, 'peng/', chow, 'chow/')
           }
         });
         //===========================
@@ -264,12 +295,12 @@ export default {
         if (this.chow) {
           if (chow.length > 3) {
             chow.forEach((e) => {
-              e.tileSort < (tileSort + 2) && e.tileSort >( tileSort - 2)
+             ( e.tileSort < (tileSort + 3) && e.tileSort >( tileSort - 3))
                 ? this.chowChain.push(e)
                 : "";
             });
           }
-          this.chowChain = chow.slice();//??????????????????
+          this.chowChain = chow.slice();//+2>chow>-2
           console.log(this.chowChain, ' / chowChain')
         }
       
@@ -282,7 +313,7 @@ export default {
         }
       }//if(!this.majiang)
       if(!this.kong&&!this.chow&&!this.peng){
-       this.mahjiongB = this.hula("checkHula", areaIdx, tileSort, tileId)}
+       this.mahjiongB = this.hula("checkHula", areaIdx, tileSort, tileId, tile)}
      // if(this.mahjionB){this.hulaNow()}
 
       if (this.mahjiongB || this.kong || this.peng || this.chow) {
@@ -315,53 +346,61 @@ export default {
             this.chow = this.kong = this.mahjiongB = false;
             let counter=0
             this.myTiles.forEach(e=>{if(counter==3){return}
-            e.tileSort===this.lastCasted[0].tileSort?(e.chiPenGan=2,
+            e.chiPenGan===0&&e.tileSort===this.lastCasted[0].tileSort?(e.chiPenGan=2,
             counter++):''})
-            }
+        }
       if (this.msg === "Kong") {
-        (this.chow = false), (this.peng = false), (this.mahjiongB = false);
-        this.$emit('updTilesCount')
-      }
+        this.chow = this.peng = this.mahjiongB = false;
+        this.$emit('updTileCount')
+            let counter=0
+            this.myTiles.map(e=>{
+            e.chiPenGan===0&&e.tileSort===this.lastCasted[0].tileSort
+            ?(e.chiPenGan=3, counter++):''})
+        }
+
       if (this.msg === "Chow") {
-        (this.peng = false), (this.kong = false), (this.mahjiongB = false);
-      }
+         this.peng = this.kong = this.mahjiongB = false;
+     console.log(this.chowChain, ' / chowchain')
+           if(this.chowChain.length>2&&this.chow){
+    
+             this.chowChain.find((e, i, array)=>
+             e===this.lastCasted[0].tileSort
+             ?array.splice(i, 1):'')
+     console.log(this.chowChain, ' / chowChain no lastCasted')
+           }
+           if(this.chowChain.length===2&&this.chow){
+              let copy=this.chowChain.slice()
+             this.myTiles.forEach((e)=>//find? forEach?
+             copy.forEach((ele, i, array)=>ele===e.tileSort&&e.chiPenGan===0
+             ?(e.chiPenGan=1, array.splice(i, 1))
+             :''))
+           }
+       }
+
       if (this.msg === "Hula") {
-        (this.chow = false), (this.kong = false), (this.peng = false);
-      }
-      if(this.chowChain.length>2&&this.chow){
-        console.log(this.chowChain)
-        this.chowChain.find((e, i, array)=>e===this.lastCasted[0].tileSort
-        ?array.splice(i, 1):'')
-        
-      }
-      if(this.chowChain.length===2&&this.chow){
-         let copy=this.chowChain.slice()
-        this.myTiles.find((e)=>
-        copy.forEach((ele, i, array)=>ele===e.tileSort
-        ?(e.chiPenGan=1, array.splice(i, 1))
-        :''))
+         this.chow = this.kong = this.peng = false
+          if (this.mahjiongB) {
+         let tempTile
+          if(this.myTiles.length<this.tilesCount[this.self])//tilesCount[this.self]
+          {
+            tempTile=this.myTiles
+            tempTile.push(this.lastCasted[0])
+          }else{tempTile=this.myTiles}
+            console.log(tempTile, ' / hula hands!')
+            this.mahjiongB=this.go=this.show=false
+            if(!this.restartB){this.$emit("hula", [tempTile, this.self])}//???????????????????????
+          }
       }
       this.go = true;
-      console.log(this.mahjiongB, "/mahjiangB");
-      let tempTile
-      if (this.mahjiongB) {
-      if(this.myTiles.length<this.tilesCount[this.self])//tilesCount[this.self]
-      {
-        tempTile=[...this.lastCasted[0], this.myTiles]
-      }else{tempTile=this.myTiles}
-        console.log(tempTile, ' / hula hands!')
-        this.$emit("hula", tempTile);//???????????????????????
-      }
-      if (this.go) {
-        window.console.log(this.payload);
-        this.$emit("pengChowKong", this.payload);
+      if (this.go&&this.payload!==null) {//this.payload ????????????????
+        window.console.log(this.payload)
+        this.$emit("pengChowKong", this.payload)
         this.payload=[]
         if (this.chow) {
           let array = this.myTiles;
           let chow = this.chowChain.slice();
           this.chowChain = [];
-          chow = chow.filter(
-            (e) =>
+          chow = chow.filter((e) =>
               e !== this.lastCasted[0].tileSort &&
               e < this.lastCasted[0].tileSort + 3 &&
               e > this.lastCasted[0].tileSort - 3
@@ -377,6 +416,7 @@ export default {
       }
       this.$emit('updateCasted')
     },
+
     checkNo: function() {
       this.show = false;
      this.$refs.checkbox.checked = false
@@ -401,8 +441,9 @@ export default {
 
     backward(clickedItem, chowTiles) {
       chowTiles.forEach((e) => {
-        if (clickedItem.length > 2 || e.tileSort !== clickedItem[0] - 1) {
-          return;
+        if (clickedItem.length > 2 || e.tileSort !== clickedItem[0] - 1||e.chiPenGan!==0) 
+        {
+          return
         } else {
           clickedItem.unshift(e.tileSort),
             this.backward(clickedItem, chowTiles);
@@ -412,31 +453,41 @@ export default {
     },
 
     concealed() {
-      let data = this.myTiles,
-        temp=data.slice(),
-        kong = false
+        let data = this.myTiles, conPong,
+        temp=data.slice()
+        //kong = false
         let result=findPong(temp);
-      window.console.log("consealed?", temp);
-      return result
-      //===================================================
-      function findPong(data) {
-        let groupBy = function(data, key) {
-          return data.reduce(function(rv, x) {
-            (rv[x[key]] = rv[x[key]] || []).push(x);
-            return rv;
-          }, {});
-        };
-        let c = groupBy(data, "tileSort");
-        let value=Object.values(c)
-        value.forEach(e=>{
-          if(e.length===4){kong=true}
-        })
-        console.log(kong, value)
-        return [kong, value]
-      }
-      //==================================================
-     // return result;
+     
+        temp=Object.values(result)
+         console.log("consealed?", temp);
+         temp.forEach(e=>e.length===4&&e.chiPenGan!==4?conPong=e:'')
+         console.log(conPong[0].tileSort, ' / conPong')
+          if(conPong.length===4){this.myTiles.forEach(e=>
+          e.tileSort===conPong[0].tileSort?(e.chiPenGan=3, console.log(e)):'')
+           this.$emit('updTileCount')
+          }    
+      return
     },
+      //===================================================
+      // function findPong(data) {
+      //   let groupBy = function(data, key) {
+      //     return data.reduce(function(rv, x) {
+      //       (rv[x[key]] = rv[x[key]] || []).push(x);
+      //       return rv;
+      //     }, {});
+      //   };
+      //   let c = groupBy(data, "tileSort");
+      //   let value=Object.values(c)
+      //   value.forEach(e=>{
+      //     if(e.length===4){kong=true}
+      //   })
+      //   console.log(kong, value)
+      //   return [kong, value]
+      // }
+      //==================================================
+    // toggleIt: function(){
+    //     this.castedShow2=!this.castedShow2
+    // },
     chiPonKon: function(){
     console.log(this.lastCasted[0].id,' / ',this.lastCasted[1])
     if(this.chowAllowed||this.pengAllowed){
@@ -445,36 +496,45 @@ export default {
         this.lastCasted[0].tileSort, 
         this.lastCasted[0].id)
        }
-      this.castedShow=!this.castedShow
+      this.castedShow2=!this.castedShow2
+      if(this.castedShow2===false){this.castedShow=true}
+      console.log(this.castedShow, ' / 2', this.castedShow2)
       return
     },
-    chiPonKon2:function(){
-      this.tilesShown=0
+    chiPonKon2:function(){//mouse move in
+      this.tilesShown=0//show all discarded tiles
+      this.castedShow=true
     },
-    chiPonKon3:function(){
-      this.tilesShown=-3//show discarded Tiles in brouser
+    chiPonKon3:function(){//mouse move out
+      //this.tilesShown=-3//show discarded Tiles in brouser
+     this.castedShow=false
     },
 
-    hula: function(head, arg1, arg2, arg3) {
-      window.console.log(head, arg1.length===this.tilesCount[this.self]-1, arg2, arg3);
+    hula: function(head, arg1, arg2, arg3, tile) {
+      console.log(head, arg1.length===this.tilesCount[this.self]-1, arg2, arg3);
       if (head === "Hula") {
-        if(arg1.length===this.tilesCount[this.self]-1){this.arg1.push(this.lastCasted[0])}
+        if(arg1.length===this.tilesCount[this.self]-1){arg1.push(this.lastCasted[0])}
+        console.log(arg1, ' / hula ?')
         let tiles= arg1.map((e) =>{return {tileSort:e.tileSort}});
         //tiles.forEach(e=>tiles.tileSort=e.tileSort)
         // tiles=Array.from(tiles);
         tiles = JSON.parse(JSON.stringify(tiles));
-        window.console.log(tiles);
+        console.log(tiles);
         let a = this.seeIfHula(tiles);
         window.console.log("Hula?/1", a);
         if (!a) {
-          this.concealed();
+          let temp = this.concealed()
+          temp = Object.values(temp)
+          console.log(temp)
         }
         else{this.hulaNow(tiles), this.mahjiongB=true}
         return
       }
       // this.hula('checkHula', areaIdx, tileSort, tileId)
       if (head === "checkHula") {
+        
         let tiles = this.myTiles.map((e) =>{return {tileSort:e.tileSort}});
+        if(tiles.length<this.tilesCount[this.self]){tiles.push({tileSort:tile.tileSort})}
          tiles = JSON.parse(JSON.stringify(tiles));
          console.log(tiles)
         //let tiles2 = [];
@@ -547,28 +607,30 @@ for(let i=0; i<leftOver[0].length; i++){
 
        let pongs=[],rest=[]
        pong.forEach(e=>e.length>2?pongs.push(e):rest.push(e))
+       console.log(pongs.length, '/ check pong length')
        if(pongs.length===4&&rest.length===0){
         i=7; 
         // let tile=result[0].concat(pongs).flat()
                  console.log(pong, " / this is pong's result")
-            this.mahjiongB=true
+            this.mahjiongB=true 
+            return this.mahjiongB
             //this.hulaNow(tile)
        } else if(pongs.length>0){
          let pong1=pongs.slice()
          for(let k=0; k<pong1.length; k++){
              let pong2=pong1.splice(pong1.length-k, k)
-             let rest2=rest.concat(pong2).flat()
-             console.log(pong2, ' / pong2', rest2, ' /rest2')
+             let rest2=pong2!==[]?rest.concat(pong2):rest
              let chow=findChowHand(rest2)
-             if(chow.length===4-pong1.length)
+              console.log(pong1, ' / pong1', chow, ' /chow')
+             if(chow.length+pong1.length===4){
              i=7; 
-             //tile=(result[0].concat(chow.concat(pong1)).flat(2))
+            //  let tile=(chow.concat(chow.concat(pong1)),
              this.mahjiongB=true
-             //this.hulaNow(tile)
              return true
+             }
          }
        } else if(pongs.length===0){
-        let chow = findChowHand(arg)
+        let chow = findChowHand(arg)//arg from pairjustify length = 12
         if(chow.length===4){
               i=7; 
               //let tile=result[0].concat(chow).flat()
@@ -594,23 +656,37 @@ for(let i=0; i<leftOver[0].length; i++){
         return false
     },
 
-    hulaNow(tiles){
+    hulaNow(tiles){//rememb to use this.tiles
       let length=this.myTiles.length
-      let temp
+      let temp=this.myTiles.slice()
       if(length<14)
       {
-        temp=[...this.lastCasted[0], this.myTiles]
-      }else{temp=this.myTiles}
-      console.log(tiles, ' / Hula hand show')
+        temp.push(this.lastCasted[0])
+      }
+
+      console.log(tiles, temp, ' / Hula hand show')
       if (this.mahjiongB) {
-            this.chowChain = temp.flat(),
+        this.peng=this.chow=this.kong=false
+            this.chowChain = temp
              this.chowOption = true
               this.show = true
               this.msg = "Hula"
           //  return this.mahjiongB;
           } 
     },
-
+    restart(){
+      let index = this.iWon[1]
+      if(this.self===this.iWon[1]){this.$emit("restart", index)}
+      this.payload= null,
+      this.chowChain=[],
+      this.showChain=[],
+      this.go =this.show=this.chowOption=this.blink=false,
+      this.peng=this.chow=this.mahjiongB=this.restartB=false,
+      this.msg="",
+      this.castedShow=true,
+      this.isRestart=false
+      console.log("restart / ", this.self)
+    },
     pairJustify(pairAndRest) {
     let i = pairAndRest[2],
         a = pairAndRest[1].slice(),
@@ -624,24 +700,32 @@ for(let i=0; i<leftOver[0].length; i++){
       return data;
     },
     chowSelected(index){
-      if(index===1||index===this.chowChain.length-2){
+      if((index===1||index===this.chowChain.length-2)){
         this.payload.push(this.chowChain[index])
-      }  
-      if(index===0){this.payload=[this.chowChain[0], 
-      this.chowChain[1]]}
-      if(index===this.chowChain.length-1){
+      } 
+      if(index===0)
+        {
+        this.payload=[this.chowChain[0], 
+        this.chowChain[1]]
+      }
+      if(index===this.chowChain.length-1)
+        {
         this.payload=[this.chowChain[this.chowChain.length-2], 
         this.chowChain[this.chowChain.length-1]]
         }
-         if(this.payload.length===2){this.chowChain=[], 
-             this.chowOption=false
-          this.myTiles.find(this.makeChow)
-    }},
-        makeChow(e){
+         if(this.payload.length===2)
+        {
+        this.chowChain=[], 
+        this.chowOption=false
+        this.myTiles.find(this.makeChow)
+        }
+    },
+
+    makeChow(e){
             this.payload.forEach(ele=>{
              if(e.id===ele.id){e.chiPenGan=1}
             })   
-      }     
+    }     
  
   }, //methods
 };
@@ -820,7 +904,8 @@ img {
   position: absolute;
   color: white;
 }
-.pengChowKong {
+
+.pengChowKong{
   display: flex;
   flex-direction: column;
   position: absolute;
@@ -840,7 +925,7 @@ img {
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  z-index: 9;
+  z-index: 1;
 }
 @keyframes mymove1 {
   from {
@@ -869,6 +954,68 @@ img {
 .pengChowKong::after {
   content: "No!";
   color: white;
+}
+ .restart{
+  display: flex;
+  flex-direction: column;
+  position: absolute;
+  color: red;
+  font-weight: 600;
+  height: 20vh;
+  width: 20vh;
+  animation: mymove1 1s infinite;
+  background: conic-gradient(
+    from 360deg,
+    white,
+    #43a5dd,
+    #3b4ea5 80%,
+    rgb(45, 31, 175)
+  );
+  opacity: 0.8;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  z-index: 1;
+}
+@keyframes mymove1 {
+  from {
+    background: conic-gradient(
+      from 0deg,
+      white,
+      #031d2c,
+      #2e4091 80%,
+      rgb(12, 5, 71)
+    );
+  }
+  to {
+    background: conic-gradient(
+      from 180deg,
+      rgb(12, 5, 71)
+      #2e4091 80%,
+      #031d2c,
+      white,
+    );
+  }
+}
+.restart::after{
+  content:'Restart';
+  color:gold;
+  font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+  font-size: 2rem;
+  font-weight: 900;
+  z-index: 9;
+}
+.restart::before{
+  content:'Hula !!!';
+  color:rgb(255, 0, 0);
+  font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+  font-size: 2rem;
+  font-weight: 900;
+  z-index: 9;
+}
+.msg{
+  color: white;
+  z-index: 9;
 }
 .nameS {
   position: absolute;
@@ -929,7 +1076,7 @@ img {
   flex-wrap: wrap;
   /* flex-direction: column; */
   position: absolute;
-  bottom: 50%;
+  bottom: 47%;
   color: red;
   font-weight: 600;
   height: auto;

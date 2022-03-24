@@ -38,11 +38,13 @@
               :discardedTiles='discardedTiles'
               :lastCasted='lastCasted'
               :tilesCount='tilesCount'
-              @updTilesCount='updTilesCount'
+              @updTileCount='updTileCount'
               @updateCasted='updateCasted'
               @pengChowKong="pengChowKong"
               @hula="hula"
-              :mahjiong="mahjiong"
+              @restart='restart'
+              :restartFlag='restartFlag'
+              :iWon="mahjiong"
               @getTile="getTile"
               :tilesOnTableLength="tilesOnTableLength"
               ref='ViewDiscarded'
@@ -180,6 +182,7 @@ export default {
       chowAllowed:false,
       lastCasted:[{url:'eastR'}, this.self],
       mahjiong:null,
+      restartFlag:false,
     };
   },
   
@@ -375,7 +378,7 @@ export default {
     });
 
     this.socket.on('getTile1', data=>{//broadcasted!
-      this.consisTiles(data)
+      setTimeout(()=>{ this.consisTiles(data)},3000)
       this.lastCasted=[{url:'board'}, this.self]
     })
 
@@ -393,7 +396,7 @@ export default {
        let pengCheck=[tileCastedNow[0].tileSort], chowCheck=[tileCastedNow[0].tileSort]
            myTiles.map(e=>{
            (e.tileSort===tileCastedNow[0].tileSort)
-           ?(pengCheck.push(e.tileSort), window.console.log(pengCheck.length>2))
+           ?(pengCheck.push(e.tileSort))
            :''
            }),
            //=================================
@@ -429,11 +432,13 @@ export default {
     this.socket.on('disTile1', data=>{
      // this.lastCasted=data[5]
       this.flowers=data[4]
-       this.consisTiles([data[0],data[1],data[2],data[3]])
+    
+       setTimeout(()=>{ this.consisTiles([data[0],data[1],data[2],data[3]])},3000);
+      
       //  this.$set(this.discardedTiles, this.getDisCardedTiles())
        if(!data[4]){
          let x=this.getTiles(this.self)//why???????????????
-         console.log(x, ' / tilesCount', this.tilesCount)
+       
          if(x.length===this.tilesCount[this.self]){alert("you not done yet!"); return}
        let a=['SOUTH', 'WEST', 'NORTH', 'EAST', 'SOUTH'];
        let i=a.findIndex(e=>e===this.inTurn);//find the first match
@@ -454,39 +459,29 @@ export default {
              this.goAhead[payload[3]]=true;//[4]=areaId
              this.inTurn=this.seatsObject[payload[3]]
              this.socket.emit('goahead', this.goAhead)//added for it
-             setTimeout(()=>{ this.updMyTiles(payload)},4000);
-      //  this.updMyTiles(payload)
+            // setTimeout(()=>{ this.updMyTiles(payload)},1000);
+             this.updMyTiles(payload)
     })
     this.socket.on('updateCasted',()=>
        this.lastCasted=[{url:'board'}, this.self])
 
     this.socket.on('mahjiong1', data=>{//myTiles
-        window.console.log("mahjiang!!!!", data),
         this.mahjiong=data
     })
 
-    //  this.socket.on('ping',()=>
-    //  { 
-    //      let payload;
-    //      {
-    //    let lastId=this.mySocketId;
-    //    this.mySocketId=this.socket.id;
-       
-    //    payload={
-    //    roomId: this.roomNumb,
-    //    lastId: lastId,
-    //    userId: this.myId,//when logged in assigned
-    //    id:this.mySocketId,
-    //    };
-    //     this.socket.emit('ping1', payload)
-    //    //this.socket.emit("reconnect", payload);
-    //   }
-      
-    //   // this.socket.emit('pong', payload)
-    //   //   window.console.log("send Pong")
-      
-    //   //socket.emit('pong', {beat: 1});
-    // });
+     this.socket.on('restart1', payload=>{
+     this.users=payload[1],
+     this.goAhead=payload[2],
+     this.inTurn=payload[3],
+      this.setPlayers(this.users),
+      this.startTiles(payload[0])
+      this.tilesCount=new Array(4).fill(14)
+      this.flowers=this.chowAllowed=this.pengAllowed=false
+      this.mahjiong=null
+      this.restartFlag=true
+      this.lastCasted=[{url:'board'}, this.self]
+     // this.updMyTiles(['restart'])
+      })
   },
             
   computed: {
@@ -501,7 +496,6 @@ export default {
       frontTileBack:{
         get(){ 
           let a=this.getFromFront
-          // if(!a){a=0}
           return a
           }
       },
@@ -541,6 +535,11 @@ export default {
            handler(val)
             {return val}
         },
+     diceTotal:{
+           handler(val){
+             console.log(val, ' / watch dices')
+           }
+     },   
      flowers:{
           handler(val){
             return val
@@ -563,6 +562,7 @@ export default {
                    "setPlayers",
                    'tileChosen',
                   //  'updDiscardedTile',
+                  'updTilesCount',
                    'updTiles',
                    'updTakeFromFront',
                    'consisTiles',
@@ -604,24 +604,27 @@ export default {
        if(e.tileSort===chowCheck[0]-1){
          chowCheck.unshift(e.tileSort)}
          })
-         console.log(chowCheck)
+    
        return chowCheck
           },
-      //payLoad=[myIdx, memory[0].tileIdx,[0].tile, [1].tileIdx, [1].tile]
-     //payload=[myIndex, tile.id, preClickedMyIdx, preClickedtileId, tileSort]
-     casting: function(payload){//myIdx, memory[0], memory[1]
-          //relocation  payload[2]=tile.index, tile.currentposition
-         if(payload[1][0]!==payload[0][0]){//[1] click differs [0] --relocate
+     
+     casting: function(payload){//[0][0]Idx_1, [0][1]tile_1; [1][0]idx_2, [1][1]tile_2
+         this.restartFlag=false
+         if(payload[1][0]!==payload[0][0]){//[0] pre-click differs [1] --relocate
+         console.log(payload)
           this.updMyTiles(["relocate", this.self, 
-          payload[0][0], payload[1][1].id, payload[0][0],payload[0][1]]);//
+          payload[1][0], payload[1][1],  payload[0][1]]);//
           return                                
          }
         
           if(payload[1][0]===payload[0][0]){//second click same as first  --discard
-          if(payload[1][1].tileSort>319){this.updTakeFromFront(), 
-          this.flowers=true}else{this.flowers=false}//?????????????????????
+          // if(payload[1][1].tileSort>319){this.updTakeFromFront(), 
+          // this.flowers=true}else{this.flowers=false}//?????????????????????
           if(this.inTurn!==this.mySeat)
           {alert('not your turn'); return}
+          if(payload[1][1].tileSort>319){this.updTakeFromFront(), 
+          this.flowers=true}else{this.flowers=false}//line 621????
+
           let data=["deserted", this.self, payload[1][1].id]// payload[1]=tile.id 
           // window.console.log(this.getDisCardedTiles(this.self))//no use
          this.updMyTiles(data)//time delay!!!!!!
@@ -632,7 +635,7 @@ export default {
           this.getTableTiles, 
           this.getDisCardedTiles(),
           this.flowers, payload[1][1]]
-          setTimeout(()=>{ this.socket.emit('disTile', payload )},3000);
+          setTimeout(()=>{ this.socket.emit('disTile', payload )},1000);
           // this.socket.emit('disTile', payload )
 
           this.lastCasted=[payload[5], this.self]//tile
@@ -646,14 +649,15 @@ export default {
 
     //data = this.self, from viewDiscated dealing
      getTile: function(data){
-       console.log(this.tilesCount[this.self], '/  tilesCount')
+     
        if(this.myTiles.length===this.tilesCount[this.self])
        {alert('too many'); return}
        if(this.inTurn!==this.mySeat){alert('not your turn'); return}
-       if(!this.goAhead||!this.disabled){return}
+       if(!this.goAhead&&!this.disabled){return}//"||""
      
        this.disabled=true
        data=["inserted", data]
+     
        this.updMyTiles(data)
        this.$set(this.myTiles, this.getTiles(this.self))
        data=[data[1], this.getTiles(data[1]), 
@@ -661,10 +665,10 @@ export default {
        this.socket.emit('getTile', data)
        this.lastCasted=[{url:'board'}, this.self]
      },
-     /*peng, chow, kong, indexofDiscardedTile, 
-     tileId, this.self*/
+     //[0]hula,[1]*peng, [2]chow, [3]kong, [4]indexofDiscardedTile, 
+     //[5]tileId, [6]this.self*/
      pengChowKong: function(data){
-       console.log(data)
+     
        let payload=[data[4],data[5],data[6]]
        this.disabled=false//just added????????????????
        if(data[0]){
@@ -682,8 +686,10 @@ export default {
         this.lastCasted=[{url:'board'}, this.self]
         this.socket.emit('updateCasted')
      },
-     updTilesCount:function(){
-       this.tilesCount[this.self]++
+     updTileCount:function(){
+       console.log( this.tilesCount[this.self]+1, this.self, this.tilesCount)
+       this.tilesCount[this.self]=this.tilesCount[this.self]+1
+       this.updTilesCount(this.self)
      },
     
     consisPlayers:function(index){
@@ -730,8 +736,16 @@ export default {
     hula:function(data){
       this.socket.emit("mahjiong", data)
     },
- 
-    
+    restart:function(arg){
+      console.log(arg)//good arg=self
+      this.inTurn=this.mySeat,
+     this.users.forEach((e,i)=>i===this.self
+     ?e.dealer=true:e.dealer=false), 
+         this.goAhead.fill(false), 
+         this.goAhead[this.self]=true,
+         this.socket.emit('restart', 
+         [this.users, this.goAhead, this.inTurn])
+    },
      //from dicing $emit when finished
     diced:function(data){
       let a=data[0];

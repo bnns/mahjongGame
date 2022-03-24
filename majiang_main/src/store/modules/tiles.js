@@ -9,16 +9,20 @@ const state = {
   ],
   tilesAll:[], //full set of mahjiang tiles
   tilesOnHands:[], //four private of tiles randomly made of tilesAll
-  discardedTiles: [[], [], [], []], //distiled from each players
+  discardedTiles: [[],[],[],[]], //distiled from each players
   publicTiles: [], //tiles yet to deal||left over of tilesAll
+  tilesCount:null,
   takeFromFront:0,
 };
-console.log(state.tilesOnHands)
+
 const actions = {
   startTiles({ commit }, arg) {
     commit("allTiles", arg.allTiles); 
     commit("setTiles",      arg.onHands);
     commit("setPublicTiles", arg.onTable);
+    commit('setDiscarded');
+    commit('setTilesCount');
+    commit('setTakeFromFront');
   },
   tileChosen({ commit }, arg) {
     commit("tileChosen", arg);
@@ -42,34 +46,40 @@ const actions = {
     commit('consisTilesDiscard', [arg[0],arg[3]])
   }
 }, //good
-  updTakeFromFront({commit}){
+    updTilesCount({commit}, arg){ 
+    commit('addOneTileLimit', arg)
+  },
+    updTakeFromFront({commit}){
     commit('fromFront')
   }
 };
-
 const mutations={
   allTiles:(state, arg)=>(state.tilesAll = arg), //all washed tiles to start
   setTiles:(state, arg)=>(state.tilesOnHands = arg),//yourStartTiles()), //in hands of 4 players
   consisTileOnHands:(state, arg)=>(state.tilesOnHands[arg[0]]=arg[1]),
   consisTilesDiscard:(state, arg)=>(state.discardedTiles=arg[1]),
   setPublicTiles:(state, arg)=>(state.publicTiles=arg),// publicWall(state.tilesAll)), //left on table center
+  setDiscarded:(state)=>(state.discardedTiles=[[],[],[],[]]),
+  setTilesCount:(state)=>(state.tilesCount=new Array(4).fill(14)),
+  setTakeFromFront: (state)=>(state.takeFromFront=0),
   players: (state, arg)=>(state.players=arg),
   tileChosen: (state, arg)=>
     state.tilesOnHands[arg[0]].filter(function(e){
       if(e.id===arg[1]){
         e.chosen = !e.chosen;//true or false?
       }
-    }), 
+    }),
+  addOneTileLimit:(state, arg)=>state.tilesCount[arg]++,
   fromFront:(state)=>
     state.takeFromFront++,
-  tilesUpdt: (state, arg)=>{
+  tilesUpdt: (state, arg)=>{//[0]='relocate', [1]=self, [2]=idx-2 [3]=tile-2 [4]=tile-1
     if(arg[0]==="relocate"){//tile from [2] to [1], --relocating
-      let a, b=Number(arg[5]), c
+      let a, b=arg[4].id, c
       state.tilesOnHands[arg[1]].forEach((ele,i)=>(
-      (ele.id===b)?(a=i, c=ele):window.console.log("doNothing")))
-      state.tilesOnHands[arg[1]].splice(a,1)
-      state.tilesOnHands[arg[1]].splice(arg[2],0,c)
-    window.console.log(state.tilesOnHands[arg[1]])
+      (ele.id===b)?(a=i, c=ele):""))//tile-2 current indx
+      state.tilesOnHands[arg[1]].splice(a,1)//remove tile-2
+      state.tilesOnHands[arg[1]].splice(arg[2],0,c)//insert to idx-2
+   // window.console.log(state.tilesOnHands[arg[1]])
     }
     else if (arg[0]==="deserted"){
     let a, b=Number(arg[2]),c
@@ -82,7 +92,7 @@ const mutations={
       state.tilesOnHands[arg[1]].push(c)}
     }
     else if(arg[0]==="inserted"){
-        if(state.tilesOnHands[arg[1]].length===13)//tilesCount???
+        if(state.tilesOnHands[arg[1]].length===state.tilesCount[arg[1]]-1)//tilesCount???
         {let a=state.publicTiles.shift()
         state.tilesOnHands[arg[1]].push(a)}
     }
@@ -90,7 +100,7 @@ const mutations={
       sortGrouping(state, arg[1])
     }
     else if(arg[0]==="peng"||arg[0]==="chow"||arg[0]==="kong"){//[1]=index,[2]=tileId,[3]=self
-      window.console.log(arg)
+     // window.console.log(arg)
       let index
       let array=state.discardedTiles[arg[1]]
       state.discardedTiles[arg[1]]
@@ -99,34 +109,13 @@ const mutations={
       ?1:(arg[0]==='peng')
       ?2:(arg[0]==='kong')
       ?3:""))
-      :'', console.log(e.id===arg[2], e.tileSort)})
+      :''})
       
-      console.log(array[index])
-      state.tilesOnHands[arg[3]].push(array[index])
+     // console.log(array[index])
+      setTimeout( state.tilesOnHands[arg[3]].push(array[index]),5000)
+      //state.tilesOnHands[arg[3]].push(array[index])
       state.discardedTiles[arg[1]].splice(index,1)
-  // console.log(array[index], ' / e.id', array[index].id)
-
-      // array.forEach(e=>e.id===arg[2]
-      // ?(a[0].chosen=true, a[0].chiPenGan=(arg[0]==="chow")
-      // ?1:(arg[0]==='peng')
-      // ?2:(arg[0]==='kong')
-      // ?3:"")
-      // :'')
-      // state.discardedTiles[arg[1]].splice(index,1)
-      // console.log(state.tilesOnHands[arg[3]], '//arg[3]//', a[0])
-  //  state.tilesOnHands[arg[3]].push(array[index])
       }
-    // state.tilesOnHands[arg[3]].forEach(e=>{
-    //   if(a[0].tileSort===e.tileSort){e.chiPenGan=(arg[0]==="chow")
-    //   ?1:(arg[0]==='peng')?2:(arg[0]==='kong')?3:""}
-    // })
-
-    // else if(arg[0]==="chow"){
-    //   window.console.log(arg)
-    // }
-    // else if(arg[0]==="kong"){
-    //   window.console.log(arg)
-    // }
   },
   myNumber: (state, arg)=>{
     state.dicedNumber.splice(arg[0], 1, arg[1]); 
@@ -145,13 +134,14 @@ const getters = {
     {return state.discardedTiles[index]}
   else{return state.discardedTiles}},
   getPublicTiles:(state)=>(index)=>{//????
-   if(state.tilesOnHands[index].length<14){//tilesCount
+   if(state.tilesOnHands[index].length<state.tilesCount[index]){//tilesCount
       state.tilesOnHands[index].push(state.publicTiles.pop());
     }
   },
   getTableTiles:(state)=>state.publicTiles,
   getDicedNumber:(state)=>state.dicedNumber,
   getPlayers:(state)=>state.players,
+  getTilesCount:(state)=>state.tilesCount,
   getFromFront:(state)=>state.takeFromFront,
 };
 export default {

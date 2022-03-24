@@ -104,7 +104,7 @@ export function findPong(data) {
 
 //========================================================
 export function findChowHand(arg) {
-  let data=arg.slice()
+  let data=arg.slice().flat()
   data.sort((a, b)=>a.tileSort-b.tileSort)
   let chowGroup = [];
   let counter = 20;
@@ -148,7 +148,7 @@ export function findChowHand(arg) {
         ? temp.push(e) //??????
         : "doNothing"
     );
-    window.console.log(temp, ' / ', counter)
+    window.console.log(Object.values(temp), ' / ', counter)
     return temp;
   }
 }
