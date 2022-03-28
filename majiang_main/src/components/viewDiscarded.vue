@@ -1,5 +1,12 @@
 <template>
   <div class="container" refs="container">
+     <h2 class="instruct" 
+          @click="instruct1()">{{'?'}}</h2>
+    <div class="guide center" v-if="instructShow">
+     <img class="guide center" src="../assets/guide.png" 
+     alt="guide to play" >
+    </div>
+
     <div  :class="{blink:(chowAllowed||pengAllowed)&&blink}"
           class="lastCasted center"
           @mouseover="chiPonKon2()"
@@ -167,6 +174,7 @@ export default {
       showChain:[{url:''}],
       go: false,
       show: false,
+      instructShow:false,
       chowOption: false,
       msg: "",
       castedShow:false,
@@ -371,7 +379,7 @@ export default {
            if(this.chowChain.length===2&&this.chow){
               let copy=this.chowChain.slice()
              this.myTiles.forEach((e)=>//find? forEach?
-             copy.forEach((ele, i, array)=>ele===e.tileSort&&e.chiPenGan===0
+             copy.map((ele, i, array)=>ele===e.tileSort&&e.chiPenGan===0
              ?(e.chiPenGan=1, array.splice(i, 1))
              :''))
            }
@@ -488,6 +496,9 @@ export default {
     // toggleIt: function(){
     //     this.castedShow2=!this.castedShow2
     // },
+    instruct1: function(){
+        this.instructShow=!this.instructShow
+    },
     chiPonKon: function(){
     console.log(this.lastCasted[0].id,' / ',this.lastCasted[1])
     if(this.chowAllowed||this.pengAllowed){
@@ -497,17 +508,16 @@ export default {
         this.lastCasted[0].id)
        }
       this.castedShow2=!this.castedShow2
-      if(this.castedShow2===false){this.castedShow=true}
-      console.log(this.castedShow, ' / 2', this.castedShow2)
+      this.castedShow=!this.castedShow
       return
     },
     chiPonKon2:function(){//mouse move in
       this.tilesShown=0//show all discarded tiles
-      this.castedShow=true
+      this.castedShow=!this.castedShow
     },
     chiPonKon3:function(){//mouse move out
       //this.tilesShown=-3//show discarded Tiles in brouser
-     this.castedShow=false
+     this.castedShow=!this.castedShow
     },
 
     hula: function(head, arg1, arg2, arg3, tile) {
@@ -749,15 +759,41 @@ img {
   height: 70vh;
   width: 80vw;
   z-index: 1;
-  /* place-content: center; */
+  place-content: center;
   /* align-content: center; */
   /* justify-self: center;   */
+}
+.guide{
+  display: grid;
+  grid-column: 1/-1;
+  grid-row: 1/-1;
+  display:-webkit-grid;
+  display: -moz-grid;
+  width: 100vw;
+  height: 90vh;
+  z-index: 99;
+}
+.instruct{
+  position: absolute;
+  display: grid;
+  justify-self:center;
+  font-size: 3rem;
+  width: 2.8rem;
+  height: 3.6rem;
+  place-items: center;
+  clip-path: circle(55%);
+  font-family: 'Times New Roman', Times, serif;
+  color: #109775;
+  background-color: gold;
+  z-index: 100;
+   cursor: pointer;
 }
 .lastCasted{
   display:grid;
   display:-webkit-grid;
    display: -moz-grid;
-  place-self: center;
+  justify-self: center;
+  align-self: center;
   align-items: center;
   position:absolute;
   /* font-size: 4rem; */
@@ -837,9 +873,11 @@ img {
   grid-template: 1fr 1fr;
   align-items: center;
   justify-items: center;
+  cursor: pointer;
 }
 .tile-back-tail img {
   box-shadow: 1px 1px 2px white;
+  cursor: pointer;
 }
 .tail {
   position: absolute;
@@ -896,6 +934,7 @@ img {
   align-items: center;
   justify-items: center;
   place-items: center;
+   cursor: pointer;
 }
 .tile-back-front img {
   box-shadow: 2px 2px 4px white;
@@ -921,11 +960,12 @@ img {
     #3b4ea5 80%,
     rgb(45, 31, 175)
   );
-  opacity: 0.8;
+  /* opacity: 0.8; */
+  align-self: center;
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  z-index: 1;
+  z-index: 99;
 }
 @keyframes mymove1 {
   from {
@@ -975,7 +1015,10 @@ img {
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  z-index: 1;
+  z-index: 101;
+}
+.restart p{
+  z-index: 102;
 }
 @keyframes mymove1 {
   from {
@@ -1003,7 +1046,7 @@ img {
   font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
   font-size: 2rem;
   font-weight: 900;
-  z-index: 9;
+  z-index: 999;
 }
 .restart::before{
   content:'Hula !!!';
@@ -1011,7 +1054,7 @@ img {
   font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
   font-size: 2rem;
   font-weight: 900;
-  z-index: 9;
+  z-index: 999;
 }
 .msg{
   color: white;
@@ -1028,6 +1071,7 @@ img {
   padding: 0;
   border-radius: 8px;
   background: rgb(91, 91, 238);
+   cursor: pointer;
 }
 
 .nameR {

@@ -107,7 +107,7 @@ import SelfTile from "./components/selfTile";
 import CrossTile from "./components/crossTile";
 import LeftTile from "./components/leftTile";
 import RightTile from "./components/rightTile";
-import ViewDiscarded from "./components/ViewDiscarded";
+import ViewDiscarded from "./components/viewDiscarded";
 import Login from "./components/login";
 import Dicing from "./components/dicing";
 import Seating from "./components/Seating";

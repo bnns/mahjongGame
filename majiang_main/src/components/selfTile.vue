@@ -155,6 +155,7 @@ button {
   margin-left: 1rem;
   border: 0px;
   border-radius: 50%;
+   cursor: pointer;
   background: radial-gradient(
     circle,
     rgb(252, 180, 180) 0%,

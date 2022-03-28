@@ -148,7 +148,7 @@ export function findChowHand(arg) {
         ? temp.push(e) //??????
         : "doNothing"
     );
-    window.console.log(Object.values(temp), ' / ', counter)
+   // window.console.log(Object.values(temp), ' / ', counter)
     return temp;
   }
 }
@@ -179,7 +179,7 @@ export function findPair(arg){
    // console.log(temp.flat())
    let copy= temp.slice()
    let a = copy
-   console.log(temp, '// value of findPong')
+  // console.log(temp, '// value of findPong')
    if(a.length===7){if(a.every(e=>e.length===2)){ return [a, temp=[]]}}
   
    a.forEach((e)=>(e.length>2)
@@ -196,7 +196,7 @@ export function findPair(arg){
    e.length===0
    ?array.splice(i,1)
    :'')
-  console.log([holder, a])
+ // console.log([holder, a])
   return [holder, a]
 }
 // export function findPair(arg){
