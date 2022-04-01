@@ -1,19 +1,30 @@
 <template>
   <div>
-    <button ref="logins" @click="logins()" v-if="stage===1">
+    <button ref="logins" @click="logins()" v-if="stage===1&&!signUp">
       <h1>{{ msg }}</h1>
     </button>
-    <div class="input" v-else-if="stage===2">
-      <h2>Your name:</h2>
-      <input v-model="username" ref="name" v-on:keyup.enter="submit()" /><br />
-      <h2>Room number:</h2>
-      <input v-model="roomId" placeholder="default" />
+    <div class="input" v-else-if="stage===2&&!signUp">
+      <h2>Name:</h2>
+      <input v-model="username" ref="name" v-on:keyup.enter="next()" /><br />
+      <h2>Room:</h2>
+      <input v-model="roomName" ref="room" v-on:keyup.enter="submit()" />
     </div>
     <div v-else-if="stage===3">
       <h2 class="text">{{"Wait "}}
         {{4-(counter===0?4:counter)}}
         {{" "}}more people</h2>
     </div>
+
+    <div class="new_account center" @click="sign_up()" 
+    v-if="stage===1&&!signUp">Sign up</div>
+    <form class='center' action="/action_page.php" 
+    v-if="signUp&&stage!==3">
+          <input ref="userName" type="text" name="name"  placeholder='user name'><br>
+          <input ref="roomName" type="text" name="room"  placeholder='room name'><br>
+         
+          <input type="password" ref="pwd" name="pwd" placeholder="password" minlength="6">
+          <input class='sendForm'  type="button" value="Submit" @click="submit()">
+    </form>
   </div>
 </template>
 
@@ -23,47 +34,46 @@ export default{
   props:["counter","name",'myId','roomId',"mySocketId"],
   data(){
     return{
-      roomNumb:this.roomId,
-      username:this.name+`${this.counter}`,
+      username:this.name,
+      roomName:this.name+"'s room",
       user:{},
       msg:"",
       stage:1,
+      signUp:false,
     };
   },
   watch:{
     username:function(newVal){
+      this.roomName = newVal+"'s room"
       return newVal;
     },
-    roomId:function(newVal){//??????????????????
-      this.roomNumb=newVal;
+    roomName:function(newVal){
+      return newVal;
     }
   },
-  // computed:{
-  //   username:function(){
-  //     return this.name+`${this.counter}`;
-  //   },
-  //},
 
   methods:{
-    setFocus(){
-      this.$nextTick(()=>{
-        this.$refs.name.focus();
-      });
+    next(){
+        this.$refs.room.focus();
     },
     logins:function(){
       this.stage=2;
-      this.setFocus();
+       this.$nextTick(()=>{
+        this.$refs.name.focus();
+        this.signUp=false;
+      });
     },
     submit(){
-      this.user.loggedIn = true;
-      this.user.name = this.username;
-      this.user.userId= this.myId;
-      this.user.index = this.counter - 1;
-      this.user.socketId = this.mySocketId;
-      this.user.roomId = this.roomNumb;
-      this.$emit("clicked", this.user);
+      this.username=this.$refs.userName.value
+      this.roomName=this.$refs.roomName.value
+      console.log('submit', this.username, ' / ', this.$refs.pwd.value)
+      if(!this.signUp){this.$emit("signIn", [this.username, this.roomName])}
+      else{this.$emit('signUp', [this.username, this.roomName, 'pwd'])}
       this.stage = 3;
     },
+    sign_up(){
+      this.signUp=true
+    }
   },
 
   created: function() {
@@ -75,6 +85,32 @@ export default{
 };
 </script>
 <style scoped>
+form{
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  align-items: center;
+}
+.sendForm{
+   width: 50%;
+   color:white;
+   background-color: black;
+}
+.new_account{
+  /* display: flex; */
+  justify-content: center;
+  align-items: center;
+  color:yellow;
+  height: 30%;
+  font-size: 2rem;
+  margin: 1rem;
+  background:radial-gradient(
+    rgb(206, 48, 48),
+    rgb(51, 88, 167),
+   rgb(210, 231, 113),
+    rgb(196, 15, 115));
+  border-radius: 45%;
+}
 .input{
   display:flex;
   flex-direction:column;
@@ -95,7 +131,7 @@ input {
   opacity:0.6;
 }
 button {
-  height: 100%;
+  height: 70%;
   background:conic-gradient(red, yellow, green, pink, red );
   border-radius: 20px;
   padding: 0 !important;

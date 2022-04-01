@@ -12,7 +12,7 @@ let memberCounter = 0; //members counter for loggedIn in one game room
 // let group = 4; //totlal persons for one room
 // let idArray = [];//????
 let roomNumb = 0;//?????
-let room = [];//should have user data with roomid (found in 43)
+let rooms = [];//should have user data with roomid (found in 43)
 // let seatselected = ["", "", "", ""];
 let socketMemo = [];
 let dataCollect = [];//need differ room into consideration
@@ -24,68 +24,108 @@ let temp = new Array(4);
 
    io.on("connection",(socket)=>{
    console.log(`Socket ${socket.id} connected.`);
+      socket.emit('whoIsIn')
+      
+      socket.on('sign_in', data=>{
+        console.log('sign_in')
+        rooms.map(e=>e.roomName===data[1]
+        ?e.users.find(ele=>ele.name===data[0]
+          ?(socket.join(data[1]), socket.to(data[1]).emit('loggedIn', ele))
+          :io.to(data[1]).emit('nameMisMatch'))
+        :socket.emit('noSuchRoom'))
+      })
+ // socket.emit('wasconnected');
+  //==================================================================== 
+  // socket.on('current',data=>{
+  //   console.log("wasconnected?","/", data.userId,' / ',socket.id);
+  //    if(!data){ return}
+  //    else{console.log(data,"/comms back",users.map((e=>
+  //     e.userId)))
+  //      let index
+  //      users.map((ele,i)=>{
+  //        //(ele.roomId===data[0])//?????????????????
+  //        if(ele.userId===data[1])
+  //         { (index=i, console.log(users[index].id+" / 33/ "+data[1]))}
+  //          else{return}})
+  //      users[index].id=socket.id
+  //      console.log(users[index].name+"comes back at room)"+users[index].roomId)
+  //   checkRoom()}
+  //      });
 
-  //  if(users.length!==0){console.log(users)
-  socket.emit('wasconnected');
-   
-  socket.on('current',data=>{
-    console.log("wasconnected?","/", data.userId,' / ',socket.id);
-     if(!data){ return}
-     else{console.log(data,"/comms back",users.map((e=>
-      e.userId)))
-       let index
-       users.map((ele,i)=>{
-         //(ele.roomId===data[0])//?????????????????
-         if(ele.userId===data[1])
-          { (index=i, console.log(users[index].id+" / 33/ "+data[1]))}
-           else{return}})
-       users[index].id=socket.id
-       console.log(users[index].name+"comes back at room)"+users[index].roomId)
-    checkRoom()}
-       });
+  //=======================================================================
    //clients[socket.id]=socket
    socketMemo.push(socket.id);
 
    //if (socketMemo.length === 1) {
     //3 sockets (app, store) for every connection
-    if(memberCounter===0) {//??how to dif more group of users
-      roomNumb=getId.getId(5);
-    }
-    users.push({
-      roomId: roomNumb,//might not be done here???
-      id: socket.id,
-      userId: getId.getId(8),
-      dealer: false,
-      // seat:'',
-    });
- // room[roomNumb].push(users);//??????????????????????????????????
-    if (users.length===5){
-      users.pop();
-    }
-    let i=users.length-1;
-    users[i].index=i;
+    // if(memberCounter===0) {//??how to dif more group of users
+    //   roomNumb=getId.getId(5);
+    // }
+    // users.push({
+    //   roomId: roomNumb,//might not be done here???
+    //   id: socket.id,
+    //   userId: getId.getId(8),
+    //   dealer: false,
+    //   // seat:'',
+    // });
+ // room[roomNumb].push(users);
+    // if (users.length===5){
+    //   users.pop();
+    // }
+    // let i=users.length-1;
+    // users[i].index=i;
     // users[i].userId=getId.getId(8);
     socketMemo=[];
-    io.emit("loggedIn",users);
+   // io.emit("loggedIn",users);//???????????????????????????join room here
  // })
+    socket.on('sign_up', data=>{
+      let flag=true, room=[]
+      rooms.find(e=>e.roomName===data[1]
+        ?(flag=false, room=e, socket.join(data[1])):'')
+      console.log('sign_up', data[0],' / ', data[1], ' / ', data[2])
+      if(flag){roomNumb=getId.getId(5);//true : starts the room
+      socket.join(data[1]);
+      room = 
+      {
+       roomId:roomNumb, 
+        roomName:data[1], 
+           users:
+              [{ id: socket.id,
+                 name:data[0],
+                 userId: getId.getId(8),
+                 dealer: false
+              }]}
+      rooms.push(room)
+    }
+      else{
+      room.users.push({id:socket.id, 
+                       name:data[0],
+                       userId:getId.getId(8),
+                       dealer:false
+                      })}
+      console.log(room, ' line 106')
+      io.to(data[1]).emit('new_user', room)
+     // rooms.map(e=>e.roomId===room.roomId?e.users.push(room.users[room.users.length-1]):'')
+      room.users.length===4?checkRoom(room):''
+    })
     //user object from login component
-   socket.on("newuser",data=>{
-      memberCounter++;
-      if(memberCounter===5){
-        (memberCounter=4)
-      } 
-      users[data.index].id=data.socketId;
-      users[data.index].userId=data.userId
-      users[data.index].name=data.name;
-      users[data.index].roomId=data.roomId;
-      users[data.index].loggedIn=data.loggedIn
-      console.log(`${users[data.index].userId} comes in room ${data.roomId} now !`);
+    // socket.on("newuser",data=>{
+    //   memberCounter++;
+    //   if(memberCounter===5){
+    //     (memberCounter=4)
+    //   } 
+    //   users[data.index].id=data.socketId;
+    //   users[data.index].userId=data.userId
+    //   users[data.index].name=data.name;
+    //   users[data.index].roomId=data.roomId;
+    //   users[data.index].loggedIn=data.loggedIn
+    //   console.log(`${users[data.index].userId} comes in room ${data.roomId} now !`);
 
-      io.emit("userOnline", users[data.index]);
-      (users.length!==4)
-      ?"doNothing"
-      :checkRoom()//see status of the room
-      });
+    //   io.emit("userOnline", users[data.index]);
+    //   (users.length!==4)
+    //   ?"doNothing"
+    //   :checkRoom()//see status of the room
+    //   });
     //find any who left the room...
   //  socket.on('ping1',(data)=>{//only socket and 'ping1'work?????
   //      users.map((user)=>{
@@ -287,10 +327,10 @@ function getRandomizer(bottom, top){
 
 // app.route('/', (req, res)=> res.send(index)) )
 
-function checkRoom(){
+function checkRoom(room){
   console.log("just check")
-  if(users.length===4){
-    io.emit("Full",users),
+  if(room.users.length===4){
+    io.to(room.roomName).emit("Full",room),
     memberCounter=0,
     socketMemo=[]
     // setTimeout(sendHeartbeat, 80000)

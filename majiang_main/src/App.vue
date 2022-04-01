@@ -88,7 +88,8 @@
 
         <div class="center" v-if="stages==='login'">
             <Login
-               @clicked="finishOnLogin"
+               @signIn="signIn"
+               @signUp="signUp"
                :counter="counter"
                :name="name"
                :myId="myId"
@@ -203,40 +204,56 @@ export default {
     
     // this.myTiles=this.getTiles(this.self)
 
-    this.socket.on('wasconnected',()=>{
+    // this.socket.on('wasconnected',()=>{
     
-      this.mySocketId=this.socket.id;
-      let data
-      if(this.wasConnected){
-        data=[this.roomNumb, this.myId]
-      }else{data=this.wasConnected, this.wasConnected=true}
-      this.socket.emit('current', data)
+    //   this.mySocketId=this.socket.id;
+    //   let data
+    //   if(this.wasConnected){
+    //     data=[this.roomNumb, this.myId]
+    //   }else{data=this.wasConnected, this.wasConnected=true}
+    //   this.socket.emit('current', data)
+    // })
+    this.socket.on('whoIsIn', ()=>{
+      console.log('whoIsIN')
+       this.stages='login'
     })
+//=================================================
     //need to use roomId for communication!
-    this.socket.on("loggedIn", data=>{
-        this.wasConnected=true
-        this.stages='login',
-      (!this.roomNumb)
-      ?(this.roomNumb=data[data.length-1].roomId, 
-       this.myId=data[data.length-1].userId)
-      :'';
-      //need info server into the same room
-      if(this.counter<5)//reconnect?
-      {
-        this.mySocketId=this.socket.id;
-        this.counter = data.length;
-      }
-     });
+    // this.socket.on("loggedIn", data=>{
+    //     this.wasConnected=true
+    //     this.stages='login',
+    //   (!this.roomNumb)
+    //   ?(this.roomNumb=data[data.length-1].roomId, 
+    //    this.myId=data[data.length-1].userId)
+    //   :'';
+    //   //need info server into the same room
+    //   if(this.counter<5)//reconnect?
+    //   {
+    //     this.mySocketId=this.socket.id;
+    //     this.counter = data.length;
+    //   }
+    //  });
 
-    this.socket.on("userOnline", data=>{
+    this.socket.on("loggedIn", data=>{
+      console.log('loggedIn', data)
       // user registed online from server
       this.users.push(data);
     });
 
+    this.socket.on('new_user', data=>{
+      console.log('new_user', data)
+      this.roomNumb=data.roomId
+      this.index=data.users.length-1
+      this.counter=data.users.length
+      this.myId=data.users[data.users.length-1].userId
+      this.pagePosition(this.counter-1);
+    })
+    
+//======================================================
     //all four players logged-in
-    this.socket.on("Full", users=>{
+    this.socket.on("Full", room=>{
       this.counter=0;
-      this.users=users;
+      this.users=room.users;
       this.stages='dicing';
     });
     
@@ -611,7 +628,6 @@ export default {
      casting: function(payload){//[0][0]Idx_1, [0][1]tile_1; [1][0]idx_2, [1][1]tile_2
          this.restartFlag=false
          if(payload[1][0]!==payload[0][0]){//[0] pre-click differs [1] --relocate
-         console.log(payload)
           this.updMyTiles(["relocate", this.self, 
           payload[1][0], payload[1][1],  payload[0][1]]);//
           return                                
@@ -728,10 +744,18 @@ export default {
       this.users[this.left]=temp//4
     },
 
-    finishOnLogin:function(user){//self on user index when start
-      this.name=user.name;
-      this.pagePosition(user.index);
-      this.socket.emit("newuser",user);
+    signIn:function(arg){//self on user index when start
+      this.name=arg[0];
+      this.roomNunb=arg[1];
+     // this.pagePosition(user.index);
+      this.socket.emit("sign_in",arg);
+    },
+    signUp:function(arg){
+      this.name=arg[0]
+      this.roomNunb=arg[1]
+      this.passWord=arg[2]
+      // this.pagePosition(user.index);
+      this.socket.emit('sign_up', arg)
     },
     hula:function(data){
       this.socket.emit("mahjiong", data)
