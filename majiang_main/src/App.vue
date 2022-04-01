@@ -214,7 +214,7 @@ export default {
     //   this.socket.emit('current', data)
     // })
     this.socket.on('whoIsIn', ()=>{
-      console.log('whoIsIN')
+      console.log('whoIsIN', this.counter)//send roomName????
        this.stages='login'
     })
 //=================================================
@@ -241,12 +241,14 @@ export default {
     });
 
     this.socket.on('new_user', data=>{
-      console.log('new_user', data)
+      let a=data.users.slice()
+      this.index=a.length
+      console.log(this.index, 'new_user', data)
       this.roomNumb=data.roomId
-      this.index=data.users.length-1
       this.counter=data.users.length
       this.myId=data.users[data.users.length-1].userId
-      this.pagePosition(this.counter-1);
+      if(!this.flowers){ this.pagePosition(this.counter-1)}
+      this.flowers=true
     })
     
 //======================================================
