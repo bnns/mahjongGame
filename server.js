@@ -1,38 +1,36 @@
+//3700a8dbca35d16c033083901e784914174ea576 commited on 4/1/22
+const {MongoClient} = require('mongodb');
 const app = require("express")();
 const http = require("http").Server(app);
 const io = require("socket.io")(http);
 const getId = require("./majiang_main/src/utilities/userId");
 const {getTiles, randomTiles, tilesMade} = require("./majiang_main/src/utilities/tileMaker")
+let rooms = null;//should have user data with roomid (found in 43)
+let roomNumb = 0;//?????
 let users = [];
 let tiles = [];
 let dupCounter = 0;
-
-let seat = 0; //counter for seat selected
-let memberCounter = 0; //members counter for loggedIn in one game room
-// let group = 4; //totlal persons for one room
-// let idArray = [];//????
-let roomNumb = 0;//?????
-let rooms = [];//should have user data with roomid (found in 43)
-// let seatselected = ["", "", "", ""];
-let socketMemo = [];
+let connected=false;
 let dataCollect = [];//need differ room into consideration
 let temp = new Array(4);
-
+let seat = 0; //counter for seat selected
+let memberCounter = 0; //members counter for loggedIn in one game room
+   main('getRooms').catch(console.error)//shoould be ... getRooms when start the server
+  //  setTimeout(()=>{console.log(rooms, ' / get rooms')}, 24000);//????????????????
    http.listen(process.env.PORT || 3000, () => {
-   console.log("port at 3000 is ready");
-   });
-
+    console.log("port at 3000 is ready");
+    })
    io.on("connection",(socket)=>{
    console.log(`Socket ${socket.id} connected.`);
       socket.emit('whoIsIn')
       
-      socket.on('sign_in', data=>{
-        console.log('sign_in')
-        rooms.map(e=>e.roomName===data[1]
-        ?e.users.find(ele=>ele.name===data[0]
-          ?(socket.join(data[1]), socket.to(data[1]).emit('loggedIn', ele))
-          :io.to(data[1]).emit('nameMisMatch'))
-        :socket.emit('noSuchRoom'))
+      socket.on('sign_in', data=>{// [player.name, roomId]
+        console.log(data, ' / 29 sign in payload')
+        rooms.map(e=>e.roomId===data[1]
+        ?(console.log(e, ' / the room logged in'), e.users.map(ele=>ele.name===data[0]
+          ?(socket.join(data[1]), io.to(data[1]).emit('loggedIn', ele))//notifing thay logged in
+          :io.to(data[1]).emit('loggedIn','nameMisMatch')))// msg sent for rename the player
+        :socket.emit('loggedIn', 'noSuchRoom'))// msg re room name 
       })
  // socket.emit('wasconnected');
   //==================================================================== 
@@ -53,31 +51,7 @@ let temp = new Array(4);
   //      });
 
   //=======================================================================
-   //clients[socket.id]=socket
-   socketMemo.push(socket.id);
-
-   //if (socketMemo.length === 1) {
-    //3 sockets (app, store) for every connection
-    // if(memberCounter===0) {//??how to dif more group of users
-    //   roomNumb=getId.getId(5);
-    // }
-    // users.push({
-    //   roomId: roomNumb,//might not be done here???
-    //   id: socket.id,
-    //   userId: getId.getId(8),
-    //   dealer: false,
-    //   // seat:'',
-    // });
- // room[roomNumb].push(users);
-    // if (users.length===5){
-    //   users.pop();
-    // }
-    // let i=users.length-1;
-    // users[i].index=i;
-    // users[i].userId=getId.getId(8);
-    socketMemo=[];
-   // io.emit("loggedIn",users);//???????????????????????????join room here
- // })
+ 
     socket.on('sign_up', data=>{
       let flag=true, room=[]
       rooms.find(e=>e.roomName===data[1]
@@ -108,6 +82,9 @@ let temp = new Array(4);
      // rooms.map(e=>e.roomId===room.roomId?e.users.push(room.users[room.users.length-1]):'')
       room.users.length===4?checkRoom(room):''
     })
+    //^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^create an instance with this room 
+
+
     //user object from login component
     // socket.on("newuser",data=>{
     //   memberCounter++;
@@ -330,12 +307,76 @@ function getRandomizer(bottom, top){
 function checkRoom(room){
   console.log("just check")
   if(room.users.length===4){
+    rooms.length===1
+    ?(console.log(room.roomName), arg=['createRoom', room],main(arg))
+    :(arg=['updateRoom', room],main(arg))
     io.to(room.roomName).emit("Full",room),
-    memberCounter=0,
-    socketMemo=[]
+    memberCounter=0
     // setTimeout(sendHeartbeat, 80000)
     }
 }
+
+async function main(arg) {
+  if(arg===[]||!arg){return}
+ 
+  const uri = "mongodb+srv://jimly56:Hangzhou@cluster0.gtlmr.mongodb.net/myFirstDatabase?retryWrites=true&w=majority"
+ // const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
+  const client = new MongoClient(uri)
+  try{
+    await client.connect()
+    console.log(arg)
+    if(client){connected=true, console.log('db.connected!...', connected, ' / ', rooms)}
+   // if(rooms.length===1){await createRooms(client, room)}
+    if(arg==='listing'){await listDatabases(client)} //this for check up document in database,
+    //=================================
+    if(arg.length===2&&arg[0]==='createRoom'){await createRooms(client, arg[1])}
+    if(arg.length===2&&arg[0]==='updateRoom'){await updateRooms(client, arg[1].roomName, arg[1])}
+    if(arg==='getRooms'){console.log('getRooms!!'); rooms = await getRooms(client)}
+    
+    //   // Update the Infinite Views listing to have 6 bedrooms and 8 beds 
+    // await updateRooms(client, "Infinite Views", 
+    // {roomId: roomNumb, roomName: roomName, users:[{}] });
+   
+    } catch(e){
+        console.error(e)
+    } finally {
+        await client.close()
+    }
+}
+//create the data document
+async function createRooms(client, room){
+  // See https://mongodb.github.io/node-mongodb-native/3.6/api/Collection.html#insertOne for the insertOne() docs
+  const result = await client.db("mahjong_db").collection("rooms").insertOne(room);
+  console.log(`New listing created with the following id: ${result.insertedId}`);
+};
+//read data document
+async function getRooms(client) {
+  // See https://mongodb.github.io/node-mongodb-native/3.6/api/Collection.html#findOne for the findOne() docs
+  const result = await client.db("mahjong_db").collection("rooms").findOne();
+
+  if (result) {
+      rooms=JSON.parse(JSON.stringify(result))
+      console.log(`Found a listing in the collection with the name '${rooms.roomName}':`);
+      console.log(rooms);
+  } else {
+      console.log(`No listings found with the name '${nameOfRoom}'`);
+  }
+};
+
+async function updateRooms(client, nameOfRoom, updatedRooms) {
+  // See https://mongodb.github.io/node-mongodb-native/3.6/api/Collection.html#updateOne for the updateOne() docs
+  const result = await client.db("mahjong_rooms").collection("rooms").updateOne({ name: nameOfRoom }, { $set: updatedRooms });
+
+  console.log(`${result.matchedCount} document(s) matched the query criteria.`);
+  console.log(`${result.modifiedCount} document(s) was/were updated.`);
+}
+async function listDatabases(client) {
+  databasesList = await client.db().admin().listDatabases();
+
+  console.log("Databases:");
+  databasesList.databases.forEach(db => console.log(` - ${db.name}`));
+  return
+};
 
 function refreshServer(){
   return
