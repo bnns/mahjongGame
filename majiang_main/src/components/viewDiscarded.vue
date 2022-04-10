@@ -961,7 +961,8 @@ img {
     rgb(45, 31, 175)
   );
   /* opacity: 0.8; */
-  align-self: center;
+  align-self: end;
+  justify-self: end;
   align-items: center;
   justify-content: center;
   border-radius: 50%;
@@ -1000,7 +1001,7 @@ img {
   flex-direction: column;
   position: absolute;
   color: red;
-  font-weight: 600;
+  font-weight: 500;
   height: 20vh;
   width: 20vh;
   animation: mymove1 1s infinite;
@@ -1014,7 +1015,8 @@ img {
   opacity: 0.8;
   align-items: center;
   justify-content: center;
-  border-radius: 50%;
+  border-radius: 30%;
+  clip-path: circle(55%);
   z-index: 101;
 }
 .restart p{
@@ -1044,15 +1046,15 @@ img {
   content:'Restart';
   color:gold;
   font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
-  font-size: 2rem;
-  font-weight: 900;
+  font-size: 1.5rem;
+  font-weight: 600;
   z-index: 999;
 }
 .restart::before{
   content:'Hula !!!';
   color:rgb(255, 0, 0);
   font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
-  font-size: 2rem;
+  font-size: 1.5rem;
   font-weight: 900;
   z-index: 999;
 }

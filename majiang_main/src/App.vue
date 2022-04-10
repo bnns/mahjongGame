@@ -266,12 +266,9 @@ export default {
     })
 
     this.socket.on('signInReady', arg=>{
-      console.log(arg)
       this.counter=arg
       !this.flowers?(this.self=this.counter-1,
-      this.pagePosition(this.self),
-      console.log(this.self, '/self/right/', this.right),
-       console.log(this.cross, '/cross/left/', this.left)):''
+      this.pagePosition(this.self)):''
       this.flowers=true 
     })
     
@@ -421,6 +418,7 @@ export default {
     });
 
     this.socket.on('getTile1', data=>{//broadcasted!
+      console.log('getTiles1', ' / ', data)
       setTimeout(()=>{ this.consisTiles(data)},3000)
       this.lastCasted=[{url:'board'}, this.self]
     })
@@ -589,7 +587,7 @@ export default {
           }
      }
    },
-     updated() {
+     updated() {//not work yet! //watch for tiles changed so....
        if(this.getTiles(this.self)){if(this.myTiles!==this.getTiles(this.self)){
           console.log('changed mytiles')}}
        if(this.getTiles(this.right)){if(!this.getTiles(this.right)){
@@ -616,11 +614,7 @@ export default {
        this.index=1//for guide instruction
        this.socket.emit("diceChange", data);
       },
-      // findMyVal:function(){
-      //  this.rightTiles=this.getTiles(this.right)
-      //  this.leftTiles=this.getTiles(this.left)
-      //  this.crossTiles=this.getTiles(this.cross)
-      // },
+
      selected: function(data){
        let selectedIndex=data;//index selected in seating.vue
        let a=this.seatsObject[selectedIndex];//find the seatname
@@ -691,7 +685,7 @@ export default {
 
     //data = this.self, from viewDiscated dealing
      getTile: function(data){
-     
+       
        if(this.myTiles.length===this.tilesCount[this.self])
        {alert('too many'); return}
        if(this.inTurn!==this.mySeat){alert('not your turn'); return}
