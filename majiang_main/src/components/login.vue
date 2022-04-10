@@ -1,11 +1,11 @@
 <template>
   <div>
-    <button ref="logins" @click="logins()" v-if="stage===1&&!signUp">
+    <button class='logins' ref="logins" @click="logins()" v-if="stage===1&&!signUp">
       <h1>{{ msg }}</h1>
     </button>
     <div class="input" v-else-if="stage===2&&!signUp">
+       <div class='label'>{{'User Name'}}</div>
        <select ref='signInName' v-model='username' @change="logins2()">
-          <option value="1">{{'Your Name:'}}</option>
           <option v-for="user in users" v-bind:key="user.id" >{{ user.name }}</option>
        </select>
       <!-- <input v-model="username" ref="name" autocomplete="false"
@@ -25,12 +25,15 @@
     <form class='center' autocomplete="off" action="/action_page.php" 
     v-if="signUp&&stage!==3">
           <input ref="userName" type="text" name="name" 
-           placeholder='user name'><br>
+           autocomplete="off" placeholder='user name'><br>
           <input ref="roomName" type="text" name="room"  placeholder='room name'><br>
          
           <input type="password" ref="pwd" name="password"
-          placeholder="password" minlength="6">
-          <input class='sendForm'  type="button" value="Submit" @click="submit()">
+          placeholder="4-pin" maxlength="4">
+           <input type="password" ref="re_pwd" name="password"
+          placeholder="re_pin" maxlength="4" v-show="repin">
+          <button id='sendForm'  type="button" value="Submit" @click="submit()">
+          {{'Submit'}}</button>
     </form>
   </div>
 </template>
@@ -46,6 +49,7 @@ export default{
       users:this.room?[this.room.users]:[],
       msg:"",
       stage:1,
+      repin:false,
       signUp:false,
     };
   },
@@ -80,20 +84,28 @@ export default{
       this.stage=3
     },
     submit(){
-     
+      this.repin=!this.repin
+       this.$refs.re_pwd.focus();
+      if(this.$refs.pwd.value===this.$refs.re_pwd.value)
+      {''}
+      else
+        { 
+        this.repin=true; this.$refs.re_pwd.value='';
+        this.$refs.re_pwd.placeholder="re_pin";
+        this.$nextTick(() => {this.$refs.re_pwd.focus()}); 
+        return
+        }
      // console.log('submit', this.username, ' / ', this.$refs.pwd.value)
-     
-      if(this.signUp){
+      if(this.signUp&&!this.repin){
          this.username=this.$refs.userName.value
          this.roomName=this.$refs.roomName.value
          this.$emit('signUp', [this.username, this.roomName, 'pwd'])}
-      this.stage = 3;
+      !this.repin?this.stage = 3:'';
     },
     sign_up(){
       this.signUp=true
     }
   },
-
   created: function() {
     this.msg = `Click to join Mahjong!`;
     this.$nextTick(() => {
@@ -109,10 +121,12 @@ form{
   flex-direction: column;
   align-items: center;
 }
-.sendForm{
-   width: 50%;
-   color:white;
-   background-color: black;
+#sendForm{
+   width: 40%;
+   margin: 15px;
+   color:black;
+   background-color: rgb(89, 207, 9);
+   border-radius: 15px;
 }
 .new_account{
   /* display: flex; */
@@ -158,7 +172,7 @@ input, select {
   border-radius:50%;
   opacity:0.6;
 }
-button {
+.logins {
   height: 70%;
   background:conic-gradient(red, yellow, green, pink, red );
   border-radius: 20px;
@@ -183,4 +197,14 @@ button:focus {
 	-webkit-background-clip: text;
 	-webkit-text-fill-color: transparent;/*not neccearry*/
 } 
+.label{
+   font-size: 2rem;
+  background: linear-gradient(to right,
+     #303dd0 0% 15%, rgb(32, 206, 16) 35% 60%,
+      #8f54d8 70% 80%, red 100%);
+  color: rgba(255,255,255,0);/*a make transparent*/
+  background-clip: text;  /*2 work together*/
+	-webkit-background-clip: text;
+	-webkit-text-fill-color: transparent;/*not neccearry*/
+}
 </style>
