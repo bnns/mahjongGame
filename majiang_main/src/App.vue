@@ -93,7 +93,9 @@
                :counter="counter"
                :name="name"
                :myId="myId"
+               :room="room"
                :roomId="roomNumb"
+               :rmName="rmName"
                :mySocketId="mySocketId"
             />
         </div>
@@ -132,6 +134,7 @@ export default {
       socket: io("http://192.168.1.64:3000"),//localhost could not be accesed by other divices
       name: "John",
       users: [],
+      room:null,
       tilesCount:new Array(4).fill(14),
       myRank: '',
       mySeat:'',
@@ -139,6 +142,7 @@ export default {
       index: 0,
       stages: '',
       roomNumb: null,
+      rmName:null,
       mySocketId: "",
       dice: [
         "one_point",
@@ -215,6 +219,11 @@ export default {
     // })
     this.socket.on('whoIsIn', ()=>{
       console.log('whoIsIN', this.counter)//send roomName????
+      let abc = (JSON.parse(localStorage.getItem('myinfo')))
+     // this.name=abc.users[this.counter].name
+      this.roomNumb = abc.roomNumb
+      this.rmName = abc.roomName
+      console.log((this.rmName))
        this.stages='login'
     })
 //=================================================
@@ -237,18 +246,33 @@ export default {
     this.socket.on("loggedIn", data=>{
       console.log('loggedIn', data)
       // user registed online from server
-      this.users.push(data);
+      this.room=data[0]
+      this.counter=data[1]
+      // this.self=this.counter-1
+      // this.pagePosition(this.self);
     });
 
     this.socket.on('new_user', data=>{
       let a=data.users.slice()
+      localStorage.removeItem('myinfo');
       this.index=a.length
       console.log(this.index, 'new_user', data)
       this.roomNumb=data.roomId
       this.counter=data.users.length
       this.myId=data.users[data.users.length-1].userId
-      if(!this.flowers){ this.pagePosition(this.counter-1)}
+      if(!this.flowers){this.pagePosition(this.counter-1)}
+      localStorage.setItem('myinfo', JSON.stringify(data))
       this.flowers=true
+    })
+
+    this.socket.on('signInReady', arg=>{
+      console.log(arg)
+      this.counter=arg
+      !this.flowers?(this.self=this.counter-1,
+      this.pagePosition(this.self),
+      console.log(this.self, '/self/right/', this.right),
+       console.log(this.cross, '/cross/left/', this.left)):''
+      this.flowers=true 
     })
     
 //======================================================
@@ -745,13 +769,18 @@ export default {
       }
       this.users[this.left]=temp//4
     },
-
-    signIn:function(arg){//self on user index when start
-      this.name=arg[0];
-      this.roomNunb=arg[1];
-     // this.pagePosition(user.index);
-      this.socket.emit("sign_in",arg);
+   //first time:['room', roomname] / ['name', roomname, username ]
+    signIn:function(arg){
+    console.log(arg, ' / sign in')
+   
+     arg[0]==='name'
+     ? (this.name=arg[2])
+     : this.roomNunb=arg[1];
+     let payload=[arg[0], arg[1],arg[2]]
+     
+      this.socket.emit("sign_in",payload);
     },
+
     signUp:function(arg){
       this.name=arg[0]
       this.roomNunb=arg[1]

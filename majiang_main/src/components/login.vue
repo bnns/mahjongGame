@@ -4,10 +4,15 @@
       <h1>{{ msg }}</h1>
     </button>
     <div class="input" v-else-if="stage===2&&!signUp">
-      <h2>Name:</h2>
-      <input v-model="username" ref="name" v-on:keyup.enter="next()" /><br />
-      <h2>Room:</h2>
-      <input v-model="roomName" ref="room" v-on:keyup.enter="submit()" />
+       <select ref='signInName' v-model='username' @change="logins2()">
+          <option value="1">{{'Your Name:'}}</option>
+          <option v-for="user in users" v-bind:key="user.id" >{{ user.name }}</option>
+       </select>
+      <!-- <input v-model="username" ref="name" autocomplete="false"
+      v-on:keyup.enter="submit()" /><br /> -->
+      <!-- <h2>Room:</h2>
+      <input v-model="roomName" ref="room"  autocomplete="false"
+      v-on:keyup.enter="submit()" /> -->
     </div>
     <div v-else-if="stage===3">
       <h2 class="text">{{"Wait "}}
@@ -17,12 +22,14 @@
 
     <div class="new_account center" @click="sign_up()" 
     v-if="stage===1&&!signUp">Sign up</div>
-    <form class='center' action="/action_page.php" 
+    <form class='center' autocomplete="off" action="/action_page.php" 
     v-if="signUp&&stage!==3">
-          <input ref="userName" type="text" name="name"  placeholder='user name'><br>
+          <input ref="userName" type="text" name="name" 
+           placeholder='user name'><br>
           <input ref="roomName" type="text" name="room"  placeholder='room name'><br>
          
-          <input type="password" ref="pwd" name="pwd" placeholder="password" minlength="6">
+          <input type="password" ref="pwd" name="password"
+          placeholder="password" minlength="6">
           <input class='sendForm'  type="button" value="Submit" @click="submit()">
     </form>
   </div>
@@ -31,12 +38,12 @@
 <script>
 export default{
   name:"Login",
-  props:["counter","name",'myId','roomId',"mySocketId"],
+  props:["counter","name",'myId','roomId',"rmName", "mySocketId", "room"],
   data(){
     return{
       username:this.name,
-      roomName:this.name+"'s room",
-      user:{},
+      roomName:this.rmName,
+      users:this.room?[this.room.users]:[],
       msg:"",
       stage:1,
       signUp:false,
@@ -47,8 +54,14 @@ export default{
       this.roomName = newVal+"'s room"
       return newVal;
     },
-    roomName:function(newVal){
-      return newVal;
+    rmName:function(newVal){
+      this.roomName=newVal
+     // return newVal;
+    },
+    room:function(newVal){
+      console.log(newVal, 'watch')
+      this.users=this.room.users
+      return newVal
     }
   },
 
@@ -58,17 +71,22 @@ export default{
     },
     logins:function(){
       this.stage=2;
-       this.$nextTick(()=>{
-        this.$refs.name.focus();
         this.signUp=false;
-      });
+         if(!this.signUp){this.$emit("signIn", ['room', this.roomName])}
+    },
+    logins2:function(){
+      console.log(this.username, ' / logins2')
+      this.$emit('signIn', ['name', this.roomName, this.username])
+      this.stage=3
     },
     submit(){
-      this.username=this.$refs.userName.value
-      this.roomName=this.$refs.roomName.value
-      console.log('submit', this.username, ' / ', this.$refs.pwd.value)
-      if(!this.signUp){this.$emit("signIn", [this.username, this.roomName])}
-      else{this.$emit('signUp', [this.username, this.roomName, 'pwd'])}
+     
+     // console.log('submit', this.username, ' / ', this.$refs.pwd.value)
+     
+      if(this.signUp){
+         this.username=this.$refs.userName.value
+         this.roomName=this.$refs.roomName.value
+         this.$emit('signUp', [this.username, this.roomName, 'pwd'])}
       this.stage = 3;
     },
     sign_up(){
@@ -120,10 +138,20 @@ h2{
   margin:0px;
   color: linear-gradient(to left rgb(106, 168, 12), pink, yellow);
 }
-input {
+input, select {
   height: 40px;
   width: 80%;
   font-size: larger;
+  color: white;
+  background-color: black;
+  text-align:center;
+  border-radius:50%;
+  opacity:0.6;
+}
+ select {
+  height: 40px;
+  width: 100%;
+  font-size: large;
   color: white;
   background-color: black;
   text-align:center;
